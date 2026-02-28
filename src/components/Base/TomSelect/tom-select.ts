@@ -7,7 +7,7 @@ import {
   type TomSettings,
   type RecursivePartial,
 } from "tom-select/src/types/index";
-import TomSelect from "./tom-select";
+import TomSelect from "tom-select";
 import _ from "lodash";
 
 const setValue = (el: TomSelectElement, props: TomSelectProps) => {
