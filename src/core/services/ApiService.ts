@@ -86,8 +86,8 @@ export default class ApiService {
                         path: "/500",
                     });
                 } else if (error.response.status == 401) {
-                    const {setUnauthenticated} = useAuthStore();
-                    setUnauthenticated()
+                    // const {setUnauthenticated} = useAuthStore();
+                    // setUnauthenticated()
                     toast.error(`<h1 style="font-weight: bold">${error.response.data.code}</h1><span>${error.response.data.message}</span>`, {
                         "dangerouslyHTMLString": true
                     });
