@@ -10,15 +10,20 @@ export default defineConfig({
       include: ["tailwind.config.js", "node_modules/**"],
     },
   },
+  server: {
+    allowedHosts: true,
+    host: '0.0.0.0',
+  },
   optimizeDeps: {
     include: ["tailwind-config"],
   },
   plugins: [vue()],
   resolve: {
     alias: {
+      "vue-i18n": "vue-i18n/dist/vue-i18n.cjs.js",
       "@": fileURLToPath(new URL("./src", import.meta.url)),
       "tailwind-config": fileURLToPath(
-        new URL("./tailwind.config.js", import.meta.url)
+          new URL("./tailwind.config.js", import.meta.url)
       ),
     },
   },

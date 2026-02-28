@@ -1,4 +1,4 @@
-import Dropzone, { type DropzoneOptions } from "./dropzone";
+import Dropzone, { type DropzoneOptions } from "dropzone";
 import { type DropzoneElement } from "./Dropzone.vue";
 
 const init = (

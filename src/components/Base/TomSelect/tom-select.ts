@@ -3,41 +3,62 @@ import {
   type TomSelectElement,
   type TomSelectEmit,
 } from "./TomSelect.vue";
-import {
-  type TomSettings,
-  type RecursivePartial,
-} from "tom-select/src/types/index";
+import type {TomSettings} from "tom-select/dist/types/types/settings";
+import type {RecursivePartial} from "tom-select/dist/types/types/core";
 import TomSelect from "tom-select";
 import _ from "lodash";
 
-const setValue = (el: TomSelectElement, props: TomSelectProps) => {
-  if (props.modelValue.length) {
-    if (Array.isArray(props.modelValue)) {
-      for (const value of props.modelValue) {
-        const selectedOption = Array.from(el).find(
-          (option) =>
-            option instanceof HTMLOptionElement && option.value == value
-        );
+// const setValue = (el: TomSelectElement, props: TomSelectProps) => {
+//   if (props.modelValue.length) {
+//     if (Array.isArray(props.modelValue)) {
+//       for (const value of props.modelValue) {
+//         const selectedOption = Array.from(el).find(
+//           (option) =>
+//             option instanceof HTMLOptionElement && option.value == value
+//         );
+//
+//         if (
+//           selectedOption !== undefined &&
+//           selectedOption instanceof HTMLOptionElement
+//         ) {
+//           selectedOption.selected = true;
+//         }
+//       }
+//     } else {
+//       el.value = props.modelValue;
+//     }
+//   }
+// };
 
+const setValue = (el: TomSelectElement, props: TomSelectProps) => {
+  const value = props.modelValue;
+  if (value != null) {
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        const selectedOption = Array.from(el).find(
+            (option) =>
+                option instanceof HTMLOptionElement && option.value == v
+        );
         if (
-          selectedOption !== undefined &&
-          selectedOption instanceof HTMLOptionElement
+            selectedOption !== undefined &&
+            selectedOption instanceof HTMLOptionElement
         ) {
           selectedOption.selected = true;
         }
       }
     } else {
-      el.value = props.modelValue;
+      el.value = value;
     }
   }
 };
 
+
 const init = (
-  originalEl: TomSelectElement,
-  clonedEl: TomSelectElement,
-  props: TomSelectProps,
-  computedOptions: RecursivePartial<TomSettings>,
-  emit: TomSelectEmit
+    originalEl: TomSelectElement,
+    clonedEl: TomSelectElement,
+    props: TomSelectProps,
+    computedOptions: RecursivePartial<TomSettings>,
+    emit: TomSelectEmit
 ) => {
   // On option add
   if (Array.isArray(props.modelValue)) {
@@ -61,15 +82,15 @@ const init = (
   // On change
   clonedEl.TomSelect.on("change", function (selectedItems: string[] | string) {
     emit(
-      "update:modelValue",
-      Array.isArray(selectedItems) ? [...selectedItems] : selectedItems
+        "update:modelValue",
+        Array.isArray(selectedItems) ? [...selectedItems] : selectedItems
     );
   });
 };
 
 const getOptions = (
-  options: HTMLCollection | undefined,
-  tempOptions: Element[] = []
+    options: HTMLCollection | undefined,
+    tempOptions: Element[] = []
 ) => {
   if (options) {
     Array.from(options).forEach(function (optionEl) {
@@ -85,24 +106,24 @@ const getOptions = (
 };
 
 const updateValue = (
-  originalEl: TomSelectElement,
-  clonedEl: TomSelectElement,
-  value: string | string[],
-  props: TomSelectProps,
-  computedOptions: RecursivePartial<TomSettings>,
-  emit: TomSelectEmit
+    originalEl: TomSelectElement,
+    clonedEl: TomSelectElement,
+    value: string | string[],
+    props: TomSelectProps,
+    computedOptions: RecursivePartial<TomSettings>,
+    emit: TomSelectEmit
 ) => {
   // Remove old options
   for (const [optionKey, option] of Object.entries(
-    clonedEl.TomSelect.options
+      clonedEl.TomSelect.options
   )) {
     if (
-      !getOptions(originalEl.children).filter((optionEl) => {
-        return (
-          optionEl instanceof HTMLOptionElement &&
-          optionEl.value === option.value
-        );
-      }).length
+        !getOptions(originalEl.children).filter((optionEl) => {
+          return (
+              optionEl instanceof HTMLOptionElement &&
+              optionEl.value === option.value
+          );
+        }).length
     ) {
       clonedEl.TomSelect.removeOption(option.value);
     }
@@ -110,29 +131,29 @@ const updateValue = (
 
   // Update classnames
   const initialClassNames = clonedEl
-    .getAttribute("data-initial-class")
-    ?.split(" ");
+      .getAttribute("data-initial-class")
+      ?.split(" ");
   clonedEl.setAttribute(
-    "class",
-    [
-      ...Array.from(originalEl.classList),
-      ...Array.from(clonedEl.classList).filter(
-        (className) => initialClassNames?.indexOf(className) == -1
-      ),
-    ].join(" ")
+      "class",
+      [
+        ...Array.from(originalEl.classList),
+        ...Array.from(clonedEl.classList).filter(
+            (className) => initialClassNames?.indexOf(className) == -1
+        ),
+      ].join(" ")
   );
   clonedEl.TomSelect.wrapper.setAttribute(
-    "class",
-    [
-      ...Array.from(originalEl.classList),
-      ...Array.from(clonedEl.TomSelect.wrapper.classList).filter(
-        (className) => initialClassNames?.indexOf(className) == -1
-      ),
-    ].join(" ")
+      "class",
+      [
+        ...Array.from(originalEl.classList),
+        ...Array.from(clonedEl.TomSelect.wrapper.classList).filter(
+            (className) => initialClassNames?.indexOf(className) == -1
+        ),
+      ].join(" ")
   );
   clonedEl.setAttribute(
-    "data-initial-class",
-    Array.from(originalEl.classList).join(" ")
+      "data-initial-class",
+      Array.from(originalEl.classList).join(" ")
   );
 
   // Add new options
@@ -151,8 +172,8 @@ const updateValue = (
 
   // Update value
   if (
-    (!Array.isArray(value) && value !== clonedEl.TomSelect.getValue()) ||
-    (Array.isArray(value) && !_.isEqual(value, clonedEl.TomSelect.getValue()))
+      (!Array.isArray(value) && value !== clonedEl.TomSelect.getValue()) ||
+      (Array.isArray(value) && !_.isEqual(value, clonedEl.TomSelect.getValue()))
   ) {
     clonedEl.TomSelect.destroy();
     if (originalEl.innerHTML) {

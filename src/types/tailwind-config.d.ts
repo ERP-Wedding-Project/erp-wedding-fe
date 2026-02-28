@@ -3,7 +3,7 @@ declare module "tailwindcss/lib/util/color" {
   export { parseColor };
 }
 
-declare module "./tailwind-config" {
+declare module "tailwind-config" {
   const config: Config;
   export default config;
 }

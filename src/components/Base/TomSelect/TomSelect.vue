@@ -2,11 +2,9 @@
 import "@/assets/css/vendors/tom-select.css";
 import _ from "lodash";
 import { setValue, init, updateValue } from "./tom-select";
-import {
-  type TomSettings,
-  type RecursivePartial,
-} from "tom-select/src/types/index";
-import TomSelectPlugin from "./tom-select";
+import type {TomSettings} from "tom-select/dist/types/types/settings";
+import type {RecursivePartial} from "tom-select/dist/types/types/core";
+import TomSelectPlugin from "tom-select";
 import {
   computed,
   type SelectHTMLAttributes,
@@ -54,11 +52,11 @@ const computedOptions = computed(() => {
       create: true,
       onDelete: function (values: string[]) {
         return confirm(
-          values.length > 1
-            ? "Are you sure you want to remove these " +
+            values.length > 1
+                ? "Are you sure you want to remove these " +
                 values.length +
                 " items?"
-            : 'Are you sure you want to remove "' + values[0] + '"?'
+                : 'Are you sure you want to remove "' + values[0] + '"?'
         );
       },
       ...options,
@@ -96,7 +94,7 @@ const vSelectDirective = {
   },
   updated(el: TomSelectElement) {
     const clonedEl = document.querySelectorAll(
-      `[data-id='${el.getAttribute("data-id")}'][data-initial-class]`
+        `[data-id='${el.getAttribute("data-id")}'][data-initial-class]`
     )[0] as TomSelectElement;
     const value = props.modelValue;
     updateValue(el, clonedEl, value, props, computedOptions.value, emit);
@@ -121,15 +119,15 @@ onMounted(() => {
 
 <template>
   <select
-    ref="tomSelectRef"
-    :value="props.modelValue"
-    @change="
+      ref="tomSelectRef"
+      :value="props.modelValue"
+      @change="
       (event) => {
         emit('update:modelValue', (event.target as HTMLSelectElement).value);
       }
     "
-    v-select-directive
-    class="tom-select"
+      v-select-directive
+      class="tom-select"
   >
     <slot></slot>
   </select>
