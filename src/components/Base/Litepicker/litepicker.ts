@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import Litepicker from "./litepicker";
+import Litepicker from "litepicker";
 import {
   type LitepickerElement,
   type LitepickerProps,

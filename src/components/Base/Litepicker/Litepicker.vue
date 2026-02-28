@@ -6,7 +6,7 @@ type LitepickerConfig = Partial<ILPConfiguration>;
 import "@/assets/css/vendors/litepicker.css";
 import { type InputHTMLAttributes, onMounted, ref, inject } from "vue";
 import { setValue, init, reInit } from "./litepicker";
-import LitepickerJs from "./litepicker";
+import LitepickerJs from "litepicker";
 import { FormInput } from "@/components/Base/Form";
 import { type ILPConfiguration } from "litepicker/dist/types/interfaces.d";
 
