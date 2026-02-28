@@ -13,6 +13,7 @@ dist
 dist-ssr
 coverage
 *.local
+.env
 
 /cypress/videos/
 /cypress/screenshots/
@@ -27,4 +28,5 @@ coverage
 *.sln
 *.sw?
 
-*.tsbuildinfo
+# Sentry Config File
+.env.sentry-build-plugin
