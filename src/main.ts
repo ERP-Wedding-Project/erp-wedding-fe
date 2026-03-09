@@ -9,7 +9,7 @@ import Vue3Toastify, { type ToastContainerOptions } from 'vue3-toastify';
 const app = createApp(App);
 const pinia = createPinia()
 
-// app.use(createPinia());
+app.use(createPinia());
 app.use(pinia)
 app.use(router);
 app.use(Vue3Toastify, {
