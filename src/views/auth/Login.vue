@@ -12,7 +12,7 @@
         <div class="flex-col hidden min-h-screen xl:flex">
           <a href="" class="flex items-center pt-5 -intro-x">
             <img alt="Learning Management System" class="w-6" :src="logoUrl"/>
-            <span class="ml-3 text-lg text-white"> Learning Management System </span>
+            <span class="ml-3 text-lg text-white">Wedding Hub</span>
           </a>
           <div class="my-auto">
             <img alt="Learning Management System" class="w-1/2 -mt-16 -intro-x" :src="illustrationUrl"/>
@@ -21,7 +21,7 @@
               sign in to your account.
             </div>
             <div class="mt-5 text-lg text-white -intro-x text-opacity-70 dark:text-slate-400">
-              "Solusi Pembelajaran Terbaik"
+              "Platform All in One Wedding Planner"
             </div>
           </div>
         </div>

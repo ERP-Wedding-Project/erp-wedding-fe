@@ -23,6 +23,13 @@ export interface FormResetPassword {
     token: string
 }
 
+export interface FormRegister {
+    email: string,
+    full_name: string,
+    password: string,
+    password_confirmation: string,
+}
+
 export default function useAuthApi() {
     const user = ref<IUser | null>(null)
     const {setAuthenticated} = useAuthStore();
@@ -60,14 +67,14 @@ export default function useAuthApi() {
         }
     }
 
-    const authenticateSystemAdmin = async (credentials: FormAuthentication) => {
+    const register = async (credentials: FormRegister) => {
         try {
             loadingBlock()
-            const response = await ApiService.post<FormAuthentication, ResponseSingleData<IUser>>("v1/public/system-admin/auth/authenticate", credentials)
+            const response = await ApiService.post<FormRegister, ResponseSingleData<IUser>>("register", credentials)
             user.value = response.data.payload.data
             if (user.value) {
                 setAuthenticated(user.value)
-                await router.push({name: "system-admin-dashboard"})
+                await router.push({name: "dashboard-overview-1"})
             }
             await HandlerService.responseSuccess(response);
         } catch (e: any) {
@@ -141,7 +148,7 @@ export default function useAuthApi() {
     return {
         user,
         authenticate,
-        authenticateSystemAdmin,
+        register,
         forgotPassword,
         resetPassword,
         unauthenticate,
