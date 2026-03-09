@@ -76,6 +76,16 @@
                 <Button variant="primary" class="w-full px-4 py-3 align-top xl:w-32 xl:mr-3" type="submit">
                   Login
                 </Button>
+                <RouterLink :to="{
+                  name: 'register'
+                }">
+                  <Button
+                      class="w-full px-4 py-3 mt-3 align-top xl:w-32 xl:mt-0"
+                      variant="outline-secondary"
+                  >
+                    Register
+                  </Button>
+                </RouterLink>
               </div>
             </form>
           </div>

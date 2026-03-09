@@ -83,22 +83,22 @@ const onSubmitRegister = async () => {
             <form @submit.prevent="onSubmitRegister">
               <div class="mt-8 intro-x">
                 <FormInput
+                    v-model="registerData.full_name"
                     class="block px-4 py-3 intro-x login__input min-w-full xl:min-w-[350px]"
                     placeholder="Full Name"
                     type="text"
-                    v-model="registerData.full_name"
                 />
                 <FormInput
+                    v-model="registerData.email"
                     class="block px-4 py-3 mt-4 intro-x login__input min-w-full xl:min-w-[350px]"
                     placeholder="Email"
                     type="email"
-                    v-model="registerData.email"
                 />
                 <FormInput
+                    v-model="registerData.password"
                     class="block px-4 py-3 mt-4 intro-x login__input min-w-full xl:min-w-[350px]"
                     placeholder="Password"
                     type="text"
-                    v-model="registerData.password"
                 />
                 <div class="grid w-full h-1 grid-cols-12 gap-4 mt-3 intro-x">
                   <div class="h-full col-span-3 rounded bg-success"></div>
@@ -115,28 +115,28 @@ const onSubmitRegister = async () => {
                   What is a secure password?
                 </a>
                 <FormInput
+                    v-model="registerData.password_confirmation"
                     class="block px-4 py-3 mt-4 intro-x login__input min-w-full xl:min-w-[350px]"
                     placeholder="Password Confirmation"
                     type="text"
-                    v-model="registerData.password_confirmation"
                 />
               </div>
-<!--              <div-->
-<!--                  class="flex items-center mt-4 text-xs intro-x text-slate-600 dark:text-slate-500 sm:text-sm"-->
-<!--              >-->
-<!--                <FormCheck.Input-->
-<!--                    id="remember-me"-->
-<!--                    class="mr-2 border"-->
-<!--                    type="checkbox"-->
-<!--                />-->
-<!--                <label class="cursor-pointer select-none" htmlFor="remember-me">-->
-<!--                  I agree to the Envato-->
-<!--                </label>-->
-<!--                <a class="ml-1 text-primary dark:text-slate-200" href="">-->
-<!--                  Privacy Policy-->
-<!--                </a>-->
-<!--                .-->
-<!--              </div>-->
+              <!--              <div-->
+              <!--                  class="flex items-center mt-4 text-xs intro-x text-slate-600 dark:text-slate-500 sm:text-sm"-->
+              <!--              >-->
+              <!--                <FormCheck.Input-->
+              <!--                    id="remember-me"-->
+              <!--                    class="mr-2 border"-->
+              <!--                    type="checkbox"-->
+              <!--                />-->
+              <!--                <label class="cursor-pointer select-none" htmlFor="remember-me">-->
+              <!--                  I agree to the Envato-->
+              <!--                </label>-->
+              <!--                <a class="ml-1 text-primary dark:text-slate-200" href="">-->
+              <!--                  Privacy Policy-->
+              <!--                </a>-->
+              <!--                .-->
+              <!--              </div>-->
               <div class="mt-5 text-center intro-x xl:mt-8 xl:text-left">
                 <Button
                     class="w-full px-4 py-3 align-top xl:w-32 xl:mr-3"
@@ -144,12 +144,16 @@ const onSubmitRegister = async () => {
                 >
                   Register
                 </Button>
-                <Button
-                    class="w-full px-4 py-3 mt-3 align-top xl:w-32 xl:mt-0"
-                    variant="outline-secondary"
-                >
-                  Sign in
-                </Button>
+                <RouterLink :to="{
+                  name: 'login'
+                }">
+                  <Button
+                      class="w-full px-4 py-3 mt-3 align-top xl:w-32 xl:mt-0"
+                      variant="outline-secondary"
+                  >
+                    Sign in
+                  </Button>
+                </RouterLink>
               </div>
             </form>
           </div>
