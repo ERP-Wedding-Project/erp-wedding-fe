@@ -18,5 +18,6 @@ export default class HandlerService {
 
     public static async responseError(error: AxiosError<ResponseError>, responseError: Ref<ResponseError|null>) {
         responseError.value = error.response?.data ?? null
+        console.log(error.response?.data)
     }
 }
