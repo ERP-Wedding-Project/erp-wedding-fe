@@ -56,6 +56,7 @@ const colorSchemes: Array<ColorSchemes> = [
   "theme-2",
   "theme-3",
   "theme-4",
+  "theme-wedding",
 ];
 
 const themeImages = import.meta.glob<{

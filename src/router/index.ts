@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Layout from "@/themes";
 import demoRoute from "@/router/demo";
-import {useAuthStore} from "@/stores/auth";
+import { useAuthStore } from "@/stores/auth";
 import ApiService from "@/core/services/ApiService";
 import i18n from "@/core/helpers/i18n";
 
@@ -21,8 +21,8 @@ const router = createRouter({
           component: () => import("../pages/DashboardOverview1.vue"),
         },
 
-          // This is demo route, delete later
-          ...demoRoute
+        // This is demo route, delete later
+        ...demoRoute,
       ],
     },
     {
@@ -36,6 +36,11 @@ const router = createRouter({
       component: () => import("../views/auth/Register.vue"),
     },
     {
+      path: "/email-verification",
+      name: "email-verification",
+      component: () => import("../views/auth/EmailVerification.vue"),
+    },
+    {
       path: "/error-page",
       name: "error-page",
       component: () => import("../pages/ErrorPage.vue"),
@@ -44,58 +49,67 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  const {isAuthenticated, getRoles} = useAuthStore();
+  const { isAuthenticated, getRoles } = useAuthStore();
   const isAuthenticatedAndAllowedToProceed = isAuthenticated();
 
   const systemAdminHost = import.meta.env.VITE_SYSTEM_ADMIN;
   const currentHost = window.location.host;
   const isSystemAdmin = currentHost === systemAdminHost;
   if (isAuthenticatedAndAllowedToProceed) {
-    ApiService.vueInstance.axios.defaults.headers.common["Authorization"] = 'Bearer ' + localStorage.getItem("access_token");
+    ApiService.vueInstance.axios.defaults.headers.common["Authorization"] =
+      "Bearer " + localStorage.getItem("access_token");
   }
   if (to.meta.pageTitle) {
-    const {t} = i18n.global;
-    let title = `${t(('menu.' + to.meta.pageTitle) as string)}`;
+    const { t } = i18n.global;
+    let title = `${t(("menu." + to.meta.pageTitle) as string)}`;
     title = String(title).charAt(0).toUpperCase() + String(title).slice(1);
     document.title = title.replace("Menu.", "");
   }
 
-  if (to.path === "/"){
-    if (isSystemAdmin){
-      return next({name: "login-system-admin"});
-    }else{
-      return next({name: "login"});
+  if (to.path === "/") {
+    if (isSystemAdmin) {
+      return next({ name: "login-system-admin" });
+    } else {
+      return next({ name: "login" });
     }
   }
 
   if (to.meta.requiresAuth && !isAuthenticatedAndAllowedToProceed) {
-    return next({name: isSystemAdmin ? "login-system-admin" : "login"});
+    return next({ name: isSystemAdmin ? "login-system-admin" : "login" });
   }
 
   if (to.name === "login" && isSystemAdmin) {
-    return next({name: "login-system-admin"});
+    return next({ name: "login-system-admin" });
   }
 
-  if (to.name === "login-system-admin" && isSystemAdmin && isAuthenticatedAndAllowedToProceed) {
-    return next({name: "system-admin-dashboard"});
+  if (
+    to.name === "login-system-admin" &&
+    isSystemAdmin &&
+    isAuthenticatedAndAllowedToProceed
+  ) {
+    return next({ name: "system-admin-dashboard" });
   }
 
-  if (to.name === "login" && !isSystemAdmin && isAuthenticatedAndAllowedToProceed) {
-    if (getRoles().includes("institution-admin")){
-      return next({name: "admin-dashboard"});
-    }else if(getRoles().includes("educator")){
-      return next({name: "educator-dashboard"});
-    }else if(getRoles().includes("student")){
-      return next({name: "student-dashboard"});
+  if (
+    to.name === "login" &&
+    !isSystemAdmin &&
+    isAuthenticatedAndAllowedToProceed
+  ) {
+    if (getRoles().includes("institution-admin")) {
+      return next({ name: "admin-dashboard" });
+    } else if (getRoles().includes("educator")) {
+      return next({ name: "educator-dashboard" });
+    } else if (getRoles().includes("student")) {
+      return next({ name: "student-dashboard" });
     }
   }
 
   if (to.name === "login-system-admin" && !isSystemAdmin) {
-    return next({name: "login"});
+    return next({ name: "login" });
   }
 
   if (to.meta.guestOnly && isAuthenticatedAndAllowedToProceed) {
-    return next({name: "dashboard-overview-1"});
+    return next({ name: "dashboard-overview-1" });
   }
 
   next();

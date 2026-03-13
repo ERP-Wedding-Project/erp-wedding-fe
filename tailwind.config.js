@@ -39,6 +39,22 @@ module.exports = {
           800: "rgb(var(--color-darkmode-800) / <alpha-value>)",
           900: "rgb(var(--color-darkmode-900) / <alpha-value>)",
         },
+        // ── Wedding Theme Color Tokens ────────────────────────────────────
+        // Bisa dipakai langsung: bg-wedding-primary, text-wedding-dark, dll.
+        wedding: {
+          primary: "#BF9270", // Warm terracotta / caramel
+          secondary: "#896B61", // Dark terracotta
+          dark: "#334155", // Sidebar / dark text
+          darkest: "#0F172A", // Darkmode deepest
+          light: "#FFEDDB", // Peach cream background
+          accent: "#EDCDBB", // Light rose accent
+          muted: "#64748B", // Secondary muted text
+          stone: "#78716C", // Warm gray
+          success: "#15803D", // Emerald green
+          "success-light": "#DCFCE7", // Light green
+          "bg-card": "#F1F5F9", // Card background
+          "bg-page": "#FEFEFE", // Page background
+        },
       },
       fontFamily: {
         roboto: ["Roboto"],
@@ -168,6 +184,44 @@ module.exports = {
           "--color-dark": toRGB(colors.slate["800"]),
           "&.dark": {
             "--color-primary": toRGB(colors.indigo["700"]),
+          },
+        },
+        // Theme Wedding — Warm Terracotta & Peach
+        // Color palette dari referensi:
+        //   Primary   : #BF9270 (warm terracotta/caramel)
+        //   Theme-2   : #896B61 (dark terracotta)
+        //   Sidebar   : #334155
+        //   Darkest   : #0F172A
+        //   Bg light  : #FFEDDB (peach cream)
+        //   Success   : #15803D (emerald green)
+        //   Secondary : #64748B (slate)
+        //   Accent    : #EDCDBB (light rose)
+        ".theme-wedding": {
+          "--color-theme-1": "191 146 112", // #BF9270
+          "--color-theme-2": "137 107 97", // #896B61
+          "--color-primary": "191 146 112", // #BF9270
+          "--color-secondary": "100 116 139", // #64748B
+          "--color-success": "21 128 61", // #15803D
+          "--color-info": toRGB(colors.sky["500"]),
+          "--color-warning": toRGB(colors.amber["400"]),
+          "--color-pending": "191 146 112", // #BF9270
+          "--color-danger": toRGB(colors.red["600"]),
+          "--color-light": "255 237 219", // #FFEDDB (peach cream)
+          "--color-dark": "51 65 85", // #334155
+          "&.dark": {
+            "--color-theme-1": "191 146 112", // #BF9270
+            "--color-theme-2": "137 107 97", // #896B61
+            "--color-primary": "191 146 112", // #BF9270
+            "--color-darkmode-50": "87 103 132",
+            "--color-darkmode-100": "74 90 121",
+            "--color-darkmode-200": "65 81 114",
+            "--color-darkmode-300": "53 69 103",
+            "--color-darkmode-400": "48 61 93",
+            "--color-darkmode-500": "41 53 82",
+            "--color-darkmode-600": "40 51 78",
+            "--color-darkmode-700": "35 45 69",
+            "--color-darkmode-800": "27 37 59",
+            "--color-darkmode-900": "15 23 42", // #0F172A
           },
         },
       });

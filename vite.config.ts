@@ -12,7 +12,14 @@ export default defineConfig({
   },
   server: {
     allowedHosts: true,
-    host: '0.0.0.0',
+    host: "0.0.0.0",
+    proxy: {
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   optimizeDeps: {
     include: ["tailwind-config"],
@@ -23,7 +30,7 @@ export default defineConfig({
       "vue-i18n": "vue-i18n/dist/vue-i18n.cjs.js",
       "@": fileURLToPath(new URL("./src", import.meta.url)),
       "tailwind-config": fileURLToPath(
-          new URL("./tailwind.config.js", import.meta.url)
+        new URL("./tailwind.config.js", import.meta.url),
       ),
     },
   },
