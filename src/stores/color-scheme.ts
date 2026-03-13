@@ -6,6 +6,7 @@ const colorSchemes = [
   "theme-2",
   "theme-3",
   "theme-4",
+  "theme-wedding"
 ] as const;
 
 export type ColorSchemes = typeof colorSchemes[number];
