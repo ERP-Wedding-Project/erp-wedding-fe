@@ -46,14 +46,13 @@ export default function useAuthApi() {
         ResponseSingleData<IUser>
       >("login", toRaw(credentials));
       user.value = response.data.payload.data;
+      user.value.access_token = response.data.payload.access_token;
       if (user.value) {
         setAuthenticated(user.value);
-        const roles = user.value.roles || [];
-        const rolePriority = ["student", "educator", "institution-admin"];
+        const roles = user.value.list_roles || [];
+        const rolePriority = ["User"];
         const destinationMap: Record<string, string> = {
-          "institution-admin": "admin-dashboard",
-          educator: "educator-dashboard",
-          student: "student-dashboard",
+          User: "dashboard-overview-1",
         };
 
         const matchedRole = rolePriority.find((role) => roles.includes(role));
