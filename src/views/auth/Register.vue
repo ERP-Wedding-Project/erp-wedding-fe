@@ -12,8 +12,8 @@ import {
   type AuthCodeFlowErrorResponse,
   type AuthCodeFlowSuccessResponse,
   type CredentialResponse,
-  GoogleSignInButton,
 } from "vue3-google-signin";
+import GoogleLoginButton from "@/components/Auth/GoogleLoginButton.vue";
 
 const registerData = ref<FormRegister>({
   email: "",
@@ -48,17 +48,6 @@ const { register, loginWithGoogle } = useAuthApi();
 //     login();
 //   }
 // };
-
-const handleLoginSuccess = (response: CredentialResponse) => {
-  const { credential } = response;
-  console.log("Access Token", credential);
-  loginWithGoogle(credential as string);
-};
-
-// handle an error event
-const handleLoginError = () => {
-  console.error("Login failed");
-};
 
 const onSubmitRegister = async () => {
   await register(registerData.value);
@@ -299,10 +288,7 @@ const onSubmitRegister = async () => {
           </div>
 
           <div class="w-full text-center">
-            <GoogleSignInButton
-              @success="handleLoginSuccess"
-              @error="handleLoginError"
-            ></GoogleSignInButton>
+            <GoogleLoginButton />
           </div>
 
           <!-- Sign in Link -->

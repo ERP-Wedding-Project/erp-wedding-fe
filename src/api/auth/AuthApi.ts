@@ -73,7 +73,6 @@ export default function useAuthApi() {
   const register = async (credentials: FormRegister) => {
     try {
       loadingBlock();
-      console.log(toRaw(credentials), "credentials");
 
       const response = await ApiService.post<
         FormRegister,
@@ -178,12 +177,20 @@ export default function useAuthApi() {
       const response = await ApiService.post<object, any>("login/google", {
         id_token: idToken,
       });
-      const redirectUrl: string | undefined =
-        response.data?.data?.redirect_url ??
-        response.data?.redirect_url ??
-        response.data?.url;
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
+      const roles = response.data.payload.data.list_roles || [];
+      const rolePriority = ["User"];
+      const destinationMap: Record<string, string> = {
+        User: "dashboard-overview-1",
+      };
+
+      const matchedRole = rolePriority.find((role) => roles.includes(role));
+      const destinationRoute =
+        destinationMap[matchedRole ?? ""] || "dashboard-overview-1";
+
+      if (response.data.payload.data.complete_onboarding) {
+        window.location.href = destinationRoute;
+      } else {
+        window.location.href = "/onboarding";
       }
     } catch (e: any) {
       await HandlerService.responseError(e, responseError);

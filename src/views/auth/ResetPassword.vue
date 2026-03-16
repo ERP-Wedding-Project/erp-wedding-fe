@@ -1,26 +1,58 @@
 <script lang="ts" setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import logoUrl from "@/assets/images/logo.svg";
 import weddingTable from "@/assets/images/wedding-table.jpg";
-import { FormInput, FormCheck } from "@/components/Base/Form";
+import { FormInput } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import Lucide from "@/components/Base/Lucide";
-import type { FormAuthentication } from "@/api/auth/AuthApi";
-import useAuthApi from "@/api/auth/AuthApi";
-import GoogleLoginButton from "@/components/Auth/GoogleLoginButton.vue";
+import useAuthApi, { type FormResetPassword } from "@/api/auth/AuthApi";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 
-const loginData = ref<FormAuthentication>({
+const route = useRoute();
+const router = useRouter();
+const { resetPassword } = useAuthApi();
+
+const resetData = ref<FormResetPassword>({
   email: "",
   password: "",
+  password_confirmation: "",
+  token: "",
 });
 
 const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+const isSubmitted = ref(false);
+const errorMessage = ref("");
 
-const { authenticate } = useAuthApi();
+onMounted(() => {
+  resetData.value.email = (route.query.email as string) || "";
+  resetData.value.token = (route.params.token as string) || (route.query.token as string) || "";
+});
 
-const onSubmitLogin = async () => {
-  await authenticate(loginData.value);
+const onSubmitResetPassword = async () => {
+  errorMessage.value = "";
+  if (resetData.value.password !== resetData.value.password_confirmation) {
+    errorMessage.value = "Passwords do not match.";
+    return;
+  }
+  
+  if (!resetData.value.password) {
+    errorMessage.value = "Password cannot be empty.";
+    return;
+  }
+  
+  if (!resetData.value.token) {
+    errorMessage.value = "Invalid or missing token.";
+    return;
+  }
+  
+  try {
+    await resetPassword(resetData.value);
+    isSubmitted.value = true;
+  } catch (error: any) {
+    errorMessage.value = error.message || "Failed to reset password. Please try again.";
+  }
 };
 </script>
 
@@ -54,15 +86,13 @@ const onSubmitLogin = async () => {
       <!-- Hero Text -->
       <div class="relative z-10 mb-6">
         <h1 class="text-5xl font-extrabold leading-tight text-white mb-3">
-          Finances,<br />
-          <span class="text-primary">simplified.</span><br />
-          Weddings,<br />
-          <span class="text-primary">amplified.</span>
+          Secure,<br />
+          <span class="text-primary">your account.</span><br />
+          Plan,<br />
+          <span class="text-primary">with confidence.</span>
         </h1>
         <p class="text-white/70 text-base leading-relaxed max-w-xs mt-4">
-          Join thousands of couples planning their dream day without the
-          financial stress. Invite your partner and start budgeting together
-          today.
+          Create a new, strong password to get back to planning your perfect day with peace of mind.
         </p>
 
         <!-- Social Proof -->
@@ -109,7 +139,7 @@ const onSubmitLogin = async () => {
         class="absolute bottom-10 right-10 w-32 h-32 text-primary/5 -rotate-12 pointer-events-none"
       />
 
-      <div class="w-full max-w-md relative z-10">
+      <div class="w-full max-w-md relative z-10" v-if="!isSubmitted">
         <!-- Logo (mobile only) -->
         <div class="flex items-center gap-2 mb-8 xl:hidden">
           <img :src="logoUrl" alt="WedHub" class="w-7 h-7" />
@@ -120,16 +150,22 @@ const onSubmitLogin = async () => {
         <h2
           class="text-3xl font-bold text-slate-800 dark:text-white text-center xl:text-left"
         >
-          Welcome Back
+          Create New Password
         </h2>
         <p
           class="text-slate-500 dark:text-slate-400 mt-1 mb-8 text-center xl:text-left"
         >
-          Please enter your details to sign in.
+          Your new password must be different from previous used passwords.
         </p>
 
-        <form @submit.prevent="onSubmitLogin" class="space-y-5">
-          <!-- Email -->
+        <form @submit.prevent="onSubmitResetPassword" class="space-y-5">
+          <div v-if="errorMessage" class="p-3 bg-danger/10 border border-danger/20 text-danger rounded-xl text-sm mb-4">
+            {{ errorMessage }}
+          </div>
+          
+          <input type="hidden" v-model="resetData.token" />
+          
+          <!-- Email (readonly) -->
           <div>
             <label
               class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5"
@@ -138,27 +174,29 @@ const onSubmitLogin = async () => {
             </label>
             <div class="relative">
               <FormInput
-                v-model="loginData.email"
+                v-model="resetData.email"
                 type="email"
                 placeholder="Enter your email"
-                class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-darkmode-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-200"
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-darkmode-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-0 opacity-70 cursor-not-allowed"
+                readonly
               />
             </div>
           </div>
 
-          <!-- Password -->
+          <!-- New Password -->
           <div>
             <label
               class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5"
             >
-              Password
+              New Password
             </label>
             <div class="relative">
               <FormInput
-                v-model="loginData.password"
+                v-model="resetData.password"
                 :type="showPassword ? 'text' : 'password'"
-                placeholder="Enter your password"
+                placeholder="Enter new password"
                 class="w-full px-4 py-3 pr-11 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-darkmode-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-200"
+                required
               />
               <button
                 type="button"
@@ -174,66 +212,73 @@ const onSubmitLogin = async () => {
             </div>
           </div>
 
-          <!-- Remember Me & Forgot Password -->
-          <div class="flex items-center justify-between text-sm">
-            <div class="flex items-center gap-2">
-              <FormCheck.Input
-                id="remember-me"
-                type="checkbox"
-                class="w-4 h-4 rounded border-slate-300 accent-primary cursor-pointer"
-              />
-              <label
-                for="remember-me"
-                class="text-slate-500 dark:text-slate-400 cursor-pointer select-none"
-              >
-                Remember me
-              </label>
-            </div>
-            <RouterLink
-              :to="{ name: 'forgot-password' }"
-              class="text-primary font-medium hover:underline"
+          <!-- Confirm Password -->
+          <div>
+            <label
+              class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5"
             >
-              Forgot password?
-            </RouterLink>
+              Confirm Password
+            </label>
+            <div class="relative">
+              <FormInput
+                v-model="resetData.password_confirmation"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                placeholder="Confirm new password"
+                class="w-full px-4 py-3 pr-11 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-darkmode-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all duration-200"
+                required
+              />
+              <button
+                type="button"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                @click="showConfirmPassword = !showConfirmPassword"
+                tabindex="-1"
+              >
+                <Lucide
+                  :icon="showConfirmPassword ? 'Eye' : 'EyeOff'"
+                  class="w-4 h-4"
+                />
+              </button>
+            </div>
           </div>
 
-          <!-- Sign In Button -->
+          <!-- Reset Password Button -->
           <Button
             type="submit"
             variant="primary"
-            class="w-full py-3.5 rounded-xl bg-primary hover:opacity-90 active:bg-theme-2 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md hover:shadow-lg border-none"
+            class="w-full py-3.5 rounded-xl bg-primary hover:opacity-90 active:bg-theme-2 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md hover:shadow-lg border-none mt-4"
           >
-            Sign in
+            Reset Password
           </Button>
 
-          <!-- Divider -->
-          <div class="flex items-center gap-3 my-6">
-            <div class="flex-1 h-px bg-slate-300"></div>
-            <span
-              class="text-xs text-slate-400 font-medium uppercase tracking-wider"
-              >Or
-            </span>
-            <div class="flex-1 h-px bg-slate-300"></div>
-          </div>
-
-          <!-- Google Login -->
-          <div class="w-full flex justify-center mt-6">
-            <GoogleLoginButton />
-          </div>
-
-          <!-- Sign Up Link -->
+          <!-- Back to login Link -->
           <p
             class="text-center text-sm text-slate-500 dark:text-slate-400 mt-8"
           >
-            Don't have an account yet?
             <RouterLink
-              :to="{ name: 'register' }"
-              class="text-primary font-medium hover:underline ml-1"
+              :to="{ name: 'login' }"
+              class="text-primary font-medium hover:underline"
             >
-              Sign up for free
+              Back to Sign in
             </RouterLink>
           </p>
         </form>
+      </div>
+
+      <div class="w-full max-w-md relative z-10 text-center" v-else>
+        <div class="mx-auto w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center mb-6">
+          <Lucide icon="Check" class="w-8 h-8" />
+        </div>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Password Reset Successful!</h2>
+        <p class="text-slate-500 dark:text-slate-400 mb-8">
+          Your password has been successfully reset. You can now use your new password to sign in to your account.
+        </p>
+        <Button
+          variant="primary"
+          class="w-full py-3.5 rounded-xl bg-primary hover:opacity-90 active:bg-theme-2 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md hover:shadow-lg border-none"
+          @click="router.push({ name: 'login' })"
+        >
+          Go to Sign in
+        </Button>
       </div>
     </div>
   </div>
