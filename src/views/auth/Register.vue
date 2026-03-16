@@ -49,8 +49,16 @@ const { register, loginWithGoogle } = useAuthApi();
 //   }
 // };
 
+const isLoading = ref(false);
+
 const onSubmitRegister = async () => {
-  await register(registerData.value);
+  if (isLoading.value) return;
+  try {
+    isLoading.value = true;
+    await register(registerData.value);
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -275,9 +283,14 @@ const onSubmitRegister = async () => {
           <!-- Create Account Button -->
           <button
             type="submit"
-            class="w-full py-3.5 rounded-full bg-primary hover:opacity-90 active:bg-theme-2 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md hover:shadow-lg"
+            :disabled="isLoading"
+            class="w-full py-3.5 rounded-full bg-primary hover:opacity-90 active:bg-theme-2 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Create Account
+            <span v-if="isLoading" class="flex items-center justify-center gap-2">
+              <Lucide icon="Loader" class="w-4 h-4 animate-spin" />
+              Creating account...
+            </span>
+            <span v-else>Create Account</span>
           </button>
 
           <!-- Divider -->

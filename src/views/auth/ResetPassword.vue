@@ -26,8 +26,11 @@ const isSubmitted = ref(false);
 const errorMessage = ref("");
 
 onMounted(() => {
-  resetData.value.email = (route.query.email as string) || "";
-  resetData.value.token = (route.params.token as string) || (route.query.token as string) || "";
+  const email = decodeURIComponent(route.query.email as string);
+
+  resetData.value.email = email || "";
+  resetData.value.token =
+    (route.params.token as string) || (route.query.token as string) || "";
 });
 
 const onSubmitResetPassword = async () => {
@@ -36,22 +39,23 @@ const onSubmitResetPassword = async () => {
     errorMessage.value = "Passwords do not match.";
     return;
   }
-  
+
   if (!resetData.value.password) {
     errorMessage.value = "Password cannot be empty.";
     return;
   }
-  
+
   if (!resetData.value.token) {
     errorMessage.value = "Invalid or missing token.";
     return;
   }
-  
+
   try {
     await resetPassword(resetData.value);
     isSubmitted.value = true;
   } catch (error: any) {
-    errorMessage.value = error.message || "Failed to reset password. Please try again.";
+    errorMessage.value =
+      error.message || "Failed to reset password. Please try again.";
   }
 };
 </script>
@@ -92,7 +96,8 @@ const onSubmitResetPassword = async () => {
           <span class="text-primary">with confidence.</span>
         </h1>
         <p class="text-white/70 text-base leading-relaxed max-w-xs mt-4">
-          Create a new, strong password to get back to planning your perfect day with peace of mind.
+          Create a new, strong password to get back to planning your perfect day
+          with peace of mind.
         </p>
 
         <!-- Social Proof -->
@@ -159,12 +164,15 @@ const onSubmitResetPassword = async () => {
         </p>
 
         <form @submit.prevent="onSubmitResetPassword" class="space-y-5">
-          <div v-if="errorMessage" class="p-3 bg-danger/10 border border-danger/20 text-danger rounded-xl text-sm mb-4">
+          <div
+            v-if="errorMessage"
+            class="p-3 bg-danger/10 border border-danger/20 text-danger rounded-xl text-sm mb-4"
+          >
             {{ errorMessage }}
           </div>
-          
+
           <input type="hidden" v-model="resetData.token" />
-          
+
           <!-- Email (readonly) -->
           <div>
             <label
@@ -265,12 +273,17 @@ const onSubmitResetPassword = async () => {
       </div>
 
       <div class="w-full max-w-md relative z-10 text-center" v-else>
-        <div class="mx-auto w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center mb-6">
+        <div
+          class="mx-auto w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center mb-6"
+        >
           <Lucide icon="Check" class="w-8 h-8" />
         </div>
-        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Password Reset Successful!</h2>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">
+          Password Reset Successful!
+        </h2>
         <p class="text-slate-500 dark:text-slate-400 mb-8">
-          Your password has been successfully reset. You can now use your new password to sign in to your account.
+          Your password has been successfully reset. You can now use your new
+          password to sign in to your account.
         </p>
         <Button
           variant="primary"

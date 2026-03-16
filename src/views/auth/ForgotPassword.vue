@@ -56,7 +56,8 @@ const onSubmitForgotPassword = async () => {
           <span class="text-primary">access.</span>
         </h1>
         <p class="text-white/70 text-base leading-relaxed max-w-xs mt-4">
-          Don't worry, it happens to the best of us. Let's get you back on track to planning your dream wedding.
+          Don't worry, it happens to the best of us. Let's get you back on track
+          to planning your dream wedding.
         </p>
 
         <!-- Social Proof -->
@@ -119,7 +120,8 @@ const onSubmitForgotPassword = async () => {
         <p
           class="text-slate-500 dark:text-slate-400 mt-1 mb-8 text-center xl:text-left"
         >
-          Enter the email address associated with your account and we'll send you a link to reset your password.
+          Enter the email address associated with your account and we'll send
+          you a link to reset your password.
         </p>
 
         <form @submit.prevent="onSubmitForgotPassword" class="space-y-5">
@@ -166,12 +168,20 @@ const onSubmitForgotPassword = async () => {
       </div>
 
       <div class="w-full max-w-md relative z-10 text-center" v-else>
-        <div class="mx-auto w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center mb-6">
+        <div
+          class="mx-auto w-16 h-16 bg-success/20 text-success rounded-full flex items-center justify-center mb-6"
+        >
           <Lucide icon="Check" class="w-8 h-8" />
         </div>
-        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Check your email</h2>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">
+          Check your email
+        </h2>
         <p class="text-slate-500 dark:text-slate-400 mb-8">
-          We've sent a password reset link to <span class="font-medium text-slate-700 dark:text-slate-300">{{ email }}</span>. Please check your inbox and spam folder.
+          We've sent a password reset link to
+          <span class="font-medium text-slate-700 dark:text-slate-300">{{
+            email
+          }}</span
+          >. Please check your inbox and spam folder.
         </p>
         <Button
           variant="primary"

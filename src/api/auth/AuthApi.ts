@@ -80,9 +80,11 @@ export default function useAuthApi() {
       >("register", toRaw(credentials));
       console.log(response, "response");
       user.value = response.data.payload.data;
+      user.value.access_token = response.data.payload.access_token;
+
       if (user.value) {
         setAuthenticated(user.value);
-        await router.push({ name: "email-verification" });
+        await router.push({ name: "verify-email" });
       }
       await HandlerService.responseSuccess(response);
     } catch (e: any) {
@@ -96,12 +98,13 @@ export default function useAuthApi() {
   const forgotPassword = async (email: string) => {
     try {
       loadingBlock();
+      console.log(email, "email");
       const response = await ApiService.post<
         {
           email: string;
         },
         ResponseSingleData<IUser>
-      >("v1/public/forgot-password/request-reset", {
+      >("password/forgot", {
         email: email,
       });
       await HandlerService.responseSuccess(response);
@@ -119,7 +122,7 @@ export default function useAuthApi() {
       const response = await ApiService.post<
         FormResetPassword,
         ResponseSingleData<IUser>
-      >("v1/public/forgot-password/reset-password", formReset);
+      >("password/reset", formReset);
       await HandlerService.responseSuccess(response);
     } catch (e: any) {
       await HandlerService.responseError(e, responseError);
@@ -205,8 +208,21 @@ export default function useAuthApi() {
   const resendVerificationEmail = async () => {
     try {
       loadingBlock();
-      const response = await ApiService.post<object, any>(
-        "email/verification-notification",
+      const response = await ApiService.post<object, any>("email/resend", {});
+      await HandlerService.responseSuccess(response);
+    } catch (e: any) {
+      await HandlerService.responseError(e, responseError);
+      throw new Error(e);
+    } finally {
+      loadingUnBlock();
+    }
+  };
+
+  const verifyEmail = async (credentials) => {
+    try {
+      loadingBlock();
+      const response = await ApiService.get<any>(
+        `email/verify/${credentials.id}/${credentials.hash}?expires=${credentials.expires}&signature=${credentials.signature}`,
       );
       await HandlerService.responseSuccess(response);
     } catch (e: any) {
@@ -227,5 +243,6 @@ export default function useAuthApi() {
     checkAuthenticate,
     loginWithGoogle,
     resendVerificationEmail,
+    verifyEmail,
   };
 }

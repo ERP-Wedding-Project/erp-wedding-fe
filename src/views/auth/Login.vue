@@ -16,11 +16,18 @@ const loginData = ref<FormAuthentication>({
 });
 
 const showPassword = ref(false);
+const isLoading = ref(false);
 
 const { authenticate } = useAuthApi();
 
 const onSubmitLogin = async () => {
-  await authenticate(loginData.value);
+  if (isLoading.value) return;
+  try {
+    isLoading.value = true;
+    await authenticate(loginData.value);
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -201,9 +208,14 @@ const onSubmitLogin = async () => {
           <Button
             type="submit"
             variant="primary"
-            class="w-full py-3.5 rounded-xl bg-primary hover:opacity-90 active:bg-theme-2 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md hover:shadow-lg border-none"
+            :disabled="isLoading"
+            class="w-full py-3.5 rounded-xl bg-primary hover:opacity-90 active:bg-theme-2 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md hover:shadow-lg border-none disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Sign in
+            <span v-if="isLoading" class="flex items-center justify-center gap-2">
+              <Lucide icon="Loader" class="w-4 h-4 animate-spin" />
+              Signing in...
+            </span>
+            <span v-else>Sign in</span>
           </Button>
 
           <!-- Divider -->
