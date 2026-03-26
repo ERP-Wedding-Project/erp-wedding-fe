@@ -3,12 +3,39 @@ import logoUrl from "@/assets/images/logo.svg";
 import weddingTable from "@/assets/images/wedding-table.jpg";
 import Lucide from "@/components/Base/Lucide";
 import { ref, onMounted, onUnmounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import useAuthApi from "@/api/auth/AuthApi.ts";
 import { useAuthStore } from "@/stores/auth";
 
-const { resendVerificationEmail, unauthenticate } = useAuthApi();
+const route = useRoute();
+const router = useRouter();
+
+const { resendVerificationEmail, unauthenticate, verifyEmail } = useAuthApi();
 const { getUser } = useAuthStore();
 console.log(getUser, "getUser");
+
+const isVerifying = ref(false);
+
+onMounted(async () => {
+  const { id, hash, expires, signature } = route.query;
+  
+  if (id && hash && expires && signature) {
+    isVerifying.value = true;
+    try {
+      await verifyEmail({
+        id: id as string,
+        hash: hash as string,
+        expires: expires as string,
+        signature: signature as string
+      });
+      router.push({ name: 'dashboard-client' });
+    } catch (error) {
+      console.error("Verification failed", error);
+    } finally {
+      isVerifying.value = false;
+    }
+  }
+});
 
 // ─── Countdown Timer ─────────────────────────────────────────────────────────
 const COOLDOWN = 60;
