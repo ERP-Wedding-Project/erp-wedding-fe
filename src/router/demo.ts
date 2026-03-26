@@ -4,6 +4,11 @@ import type {RouteRecordRaw} from "vue-router";
 const demoRoute: Array<RouteRecordRaw> = [
 
     {
+        path: "dashboard-overview-1",
+        name: "dashboard-overview-1",
+        component: () => import("../pages/DashboardOverview1.vue"),
+    },
+    {
         path: "dashboard-overview-2",
         name: "dashboard-overview-2",
         component: () => import("../pages/DashboardOverview2.vue"),

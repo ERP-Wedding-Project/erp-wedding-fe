@@ -52,12 +52,12 @@ export default function useAuthApi() {
         const roles = user.value.list_roles || [];
         const rolePriority = ["User"];
         const destinationMap: Record<string, string> = {
-          User: "dashboard-overview-1",
+          User: "dashboard-client",
         };
 
         const matchedRole = rolePriority.find((role) => roles.includes(role));
         const destinationRoute =
-          destinationMap[matchedRole ?? ""] || "dashboard-overview-1";
+          destinationMap[matchedRole ?? ""] || "dashboard-client";
 
         await router.push({ name: destinationRoute });
       }
@@ -183,12 +183,12 @@ export default function useAuthApi() {
       const roles = response.data.payload.data.list_roles || [];
       const rolePriority = ["User"];
       const destinationMap: Record<string, string> = {
-        User: "dashboard-overview-1",
+        User: "dashboard-client",
       };
 
       const matchedRole = rolePriority.find((role) => roles.includes(role));
       const destinationRoute =
-        destinationMap[matchedRole ?? ""] || "dashboard-overview-1";
+        destinationMap[matchedRole ?? ""] || "dashboard-client";
 
       if (response.data.payload.data.complete_onboarding) {
         window.location.href = destinationRoute;

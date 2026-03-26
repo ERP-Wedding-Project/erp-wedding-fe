@@ -28,7 +28,7 @@ onMounted(async () => {
         expires: expires as string,
         signature: signature as string
       });
-      router.push({ name: 'dashboard-overview-1' });
+      router.push({ name: 'dashboard-client' });
     } catch (error) {
       console.error("Verification failed", error);
     } finally {

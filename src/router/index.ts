@@ -17,10 +17,29 @@ const router = createRouter({
       children: [
         {
           path: "/dashboard",
-          name: "dashboard-overview-1",
-          component: () => import("../pages/DashboardOverview1.vue"),
+          name: "dashboard-client",
+          component: () => import("../views/client/Dashboard.vue"),
         },
-
+        {
+          path: "/timeline",
+          name: "timeline-client",
+          component: () => import("../views/client/Timeline.vue"),
+        },
+        {
+          path: "/budget-tracker",
+          name: "budget-tracker-client",
+          component: () => import("../views/client/BudgetTracker.vue"),
+        },
+        {
+          path: "/saving",
+          name: "saving-client",
+          component: () => import("../views/client/Saving.vue"),
+        },
+        {
+          path: "/profile",
+          name: "profile-client",
+          component: () => import("../views/client/Profile.vue"),
+        },
         // This is demo route, delete later
         ...demoRoute,
       ],
@@ -119,7 +138,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.guestOnly && isAuthenticatedAndAllowedToProceed) {
-    return next({ name: "dashboard-overview-1" });
+    return next({ name: "dashboard-client" });
   }
 
   next();
