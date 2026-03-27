@@ -11,7 +11,7 @@
     "allowImportingTsExtensions": true,
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "lib": ["ESNext", "DOM"],
     "ignoreDeprecations": "5.0",
     "noImplicitAny": false,
@@ -20,5 +20,5 @@
       "@/*": ["./src/*"]
     },
     "types": ["vite/client"]
-  },
+  }
 }

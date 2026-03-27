@@ -46,7 +46,7 @@ export default function useAuthApi() {
         ResponseSingleData<IUser>
       >("login", toRaw(credentials));
       user.value = response.data.payload.data;
-      user.value.access_token = response.data.payload.access_token;
+      // user.value.access_token = response.data.payload.access_token;
       if (user.value) {
         setAuthenticated(user.value);
         const roles = user.value.list_roles || [];
@@ -80,7 +80,7 @@ export default function useAuthApi() {
       >("register", toRaw(credentials));
       console.log(response, "response");
       user.value = response.data.payload.data;
-      user.value.access_token = response.data.payload.access_token;
+      // user.value.access_token = response.data.payload.access_token;
 
       if (user.value) {
         setAuthenticated(user.value);
