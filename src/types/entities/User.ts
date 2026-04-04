@@ -5,13 +5,18 @@ export interface ICreatedBy {
 }
 
 export default interface IUser {
-  id: string;
+  id: number;
   email: string;
-  username: string;
   name: string | null;
+  avatar: string | null;
+  complete_onboarding: boolean;
+  projects_count: number;
+  external_id: string | null;
+  email_verified_at: string | null;
+  deleted_at: string | null;
   created_at: string;
+  updated_at: string;
   list_roles: string[];
-  role_ids: string[];
-  access_token: string;
   list_permissions: string[];
+  access_token: string;
 }

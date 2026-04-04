@@ -1,6 +1,24 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import Lucide from "@/components/Base/Lucide";
+import AddTaskModal from "./components/AddTaskModal.vue";
+
+// Modal
+const isAddTaskModalOpen = ref(false);
+
+const openAddTaskModal = () => {
+  isAddTaskModalOpen.value = true;
+};
+
+const closeAddTaskModal = () => {
+  isAddTaskModalOpen.value = false;
+};
+
+const onTaskAdded = () => {
+  // Callback when a task is successfully added
+  // You can reload the task list here if needed
+  console.log("Task successfully added!");
+};
 
 // Mock Data
 const stats = ref({
@@ -88,7 +106,10 @@ const toggleTask = (task: any) => {
         <div class="mt-1 text-slate-500 dark:text-slate-400">Manage your tasks and stay on track for your big day.</div>
       </div>
       <div class="flex items-center gap-4 mt-4 sm:mt-0">
-        <button class="px-5 py-2.5 bg-primary text-white font-medium rounded-full shadow-md hover:bg-primary/90 hover:shadow-lg transition-all flex items-center">
+        <button
+          @click="openAddTaskModal"
+          class="px-5 py-2.5 bg-primary text-white font-medium rounded-full shadow-md hover:bg-primary/90 hover:shadow-lg transition-all flex items-center"
+        >
           <Lucide icon="Plus" class="w-4 h-4 mr-2" /> Add Task
         </button>
       </div>
@@ -185,5 +206,14 @@ const toggleTask = (task: any) => {
         </div>
       </div>
     </div>
+
+    <!-- BEGIN: Add Task Modal Component -->
+    <AddTaskModal 
+      :open="isAddTaskModalOpen"
+      project-code="your-project-code"
+      @close="closeAddTaskModal"
+      @success="onTaskAdded"
+    />
+    <!-- END: Add Task Modal Component -->
   </div>
 </template>

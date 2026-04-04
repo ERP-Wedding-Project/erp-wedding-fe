@@ -15,7 +15,7 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: {
       "/api": {
-        target: "http://217.217.254.56:8888/",
+        target: "https://wedhubapi.flowku.my.id:8888/",
         changeOrigin: true,
         secure: false,
       },
