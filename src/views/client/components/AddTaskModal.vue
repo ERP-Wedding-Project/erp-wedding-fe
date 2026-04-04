@@ -10,7 +10,7 @@ import {
 } from "@/components/Base/Form";
 import useTaskApi, { type FormTask } from "@/api/client/TaskApi";
 import useTaskCategoryApi from "@/api/client/TaskCategoryApi";
-import useLocalUser from "@/composables/useLocalUser";
+import useLocalUser from "@/composable/useLocalUser";
 
 const props = defineProps<{
   open: boolean;
