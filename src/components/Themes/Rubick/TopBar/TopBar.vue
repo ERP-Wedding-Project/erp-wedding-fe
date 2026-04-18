@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import Lucide from "@/components/Base/Lucide";
 import Breadcrumb from "@/components/Base/Breadcrumb";
 import { FormInput } from "@/components/Base/Form";
@@ -8,6 +8,7 @@ import fakerData from "@/utils/faker";
 import _ from "lodash";
 import { TransitionRoot } from "@headlessui/vue";
 import { useAuthStore } from "@/stores/auth";
+import { useRoute } from "vue-router";
 
 const { setUnauthenticated } = useAuthStore();
 
@@ -18,6 +19,9 @@ const showSearchDropdown = () => {
 const hideSearchDropdown = () => {
   searchDropdown.value = false;
 };
+
+const route = useRoute();
+const currentRouteName = computed(() => route.path.split("/")[1]);
 </script>
 
 <template>
@@ -27,8 +31,10 @@ const hideSearchDropdown = () => {
   >
     <!-- BEGIN: Breadcrumb -->
     <Breadcrumb class="hidden mr-auto -intro-x sm:flex">
-      <Breadcrumb.Link to="/">Application</Breadcrumb.Link>
-      <Breadcrumb.Link to="/" :active="true"> Dashboard </Breadcrumb.Link>
+      <Breadcrumb.Link to="/">WedHub</Breadcrumb.Link>
+      <Breadcrumb.Link to="/" :active="true" class="capitalize">
+        {{ currentRouteName.replace("-", " ") }}
+      </Breadcrumb.Link>
     </Breadcrumb>
     <!-- END: Breadcrumb -->
     <!-- BEGIN: Search -->
