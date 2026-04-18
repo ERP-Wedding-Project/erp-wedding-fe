@@ -5,6 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 import { twMerge } from "tailwind-merge";
 import logoUrl from "@/assets/images/logo.svg";
 import Lucide from "@/components/Base/Lucide";
+import ProjectSwitcher from "@/components/ProjectSwitcher";
 import { useMenuStore } from "@/stores/menu";
 import { useThemeStore } from "@/stores/theme";
 import {
@@ -111,6 +112,9 @@ onMounted(() => {
           "
         />
       </a>
+      <div class="px-5 mt-8 mb-2">
+        <ProjectSwitcher />
+      </div>
       <ul class="py-2">
         <!-- BEGIN: First Child -->
         <template v-for="(menu, menuKey) in formattedMenu">

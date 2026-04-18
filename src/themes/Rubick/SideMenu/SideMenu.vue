@@ -6,6 +6,7 @@ import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import TopBar from "@/components/Themes/Rubick/TopBar";
 import MobileMenu from "@/components/MobileMenu";
+import ProjectSwitcher from "@/components/ProjectSwitcher";
 import { useMenuStore } from "@/stores/menu";
 import {
   type ProvideForceActiveMenu,
@@ -80,6 +81,9 @@ onMounted(() => {
           />
           <span class="hidden ml-3 text-lg text-white xl:block"> Rubick </span>
         </RouterLink>
+        <div class="px-5 mt-6 hidden xl:block">
+          <ProjectSwitcher />
+        </div>
         <div class="my-6 side-nav__divider"></div>
         <ul>
           <template v-for="(menu, menuKey) in formattedMenu">

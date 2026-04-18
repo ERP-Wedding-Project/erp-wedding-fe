@@ -1,41 +1,46 @@
 <script setup lang="ts">
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, computed } from "vue";
 import Lucide from "@/components/Base/Lucide";
 import { Dialog } from "@/components/Base/Headless";
-import {
-  FormInput,
-  FormLabel,
-  FormSelect,
-  FormTextarea,
-} from "@/components/Base/Form";
+import { FormInput, FormLabel, FormTextarea } from "@/components/Base/Form";
+import Litepicker from "@/components/Base/Litepicker";
+import TomSelect from "@/components/Base/TomSelect";
 import useTaskApi, { type FormTask } from "@/api/client/TaskApi";
 import useTaskCategoryApi from "@/api/client/TaskCategoryApi";
 import useLocalUser from "@/composable/useLocalUser";
+import useEnumsOptionApi from "@/api/client/EnumsOptionApi";
 
 const props = defineProps<{
   open: boolean;
   projectCode: string;
+  weddingDate: string;
+  projectUsers?: any[];
 }>();
 
 const emit = defineEmits<{
   (e: "close"): void;
   (e: "success"): void;
 }>();
-
 const isSubmitting = ref(false);
 
 const { createTask, responseError } = useTaskApi();
 const { getListTaskCategory } = useTaskCategoryApi();
+const { getEnumsOption } = useEnumsOptionApi();
 const { userId } = useLocalUser();
 
 const taskCategories = ref<any[]>([]);
+const taskPriorities = ref<any[]>([]);
+const taskStatuses = ref<any[]>([]);
 
 const fetchTaskCategories = async () => {
   try {
     const data = await getListTaskCategory();
-    console.log("fa", data);
+    const list_priorities = await getEnumsOption("task_priorities");
+    const list_statuses = await getEnumsOption("task_statuses");
 
     taskCategories.value = data?.payload?.data ?? [];
+    taskPriorities.value = list_priorities?.payload?.data ?? [];
+    taskStatuses.value = list_statuses?.payload?.data ?? [];
   } catch (_) {
     // error handled by useTaskCategoryApi
   }
@@ -47,18 +52,32 @@ const defaultForm: FormTask = {
   status: "",
   priority: "",
   due_date: "",
-  user_id: null,
+  assignee_ids: [],
   task_category_id: null,
 };
 
 const form = reactive<FormTask>({ ...defaultForm });
+
+const taskCategoryIdString = computed({
+  get: () => (form.task_category_id ? form.task_category_id.toString() : ""),
+  set: (val: string) => {
+    form.task_category_id = val ? parseInt(val, 10) : null;
+  },
+});
+
+const assigneeIdsString = computed({
+  get: () => form.assignee_ids.map(String),
+  set: (val: string[]) => {
+    form.assignee_ids = val.map((v) => parseInt(v, 10));
+  },
+});
 
 watch(
   () => props.open,
   (newVal) => {
     if (newVal) {
       Object.assign(form, defaultForm);
-      form.user_id = userId.value;
+      form.assignee_ids = [userId.value];
       fetchTaskCategories();
       if (responseError.value) {
         responseError.value = null;
@@ -175,13 +194,21 @@ const handleSubmitTask = async () => {
               >
                 Status <span class="text-danger">*</span>
               </FormLabel>
-              <FormSelect id="task-status" v-model="form.status" required>
-                <option value="" disabled>Select status</option>
-                <option value="PENDING">Pending</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="DONE">Done</option>
-                <option value="CANCELLED">Cancelled</option>
-              </FormSelect>
+              <TomSelect
+                id="task-status"
+                v-model="form.status"
+                class="w-full [&_.dropdown-input-wrap]:hidden"
+                required
+                :options="{ placeholder: 'Select status' }"
+              >
+                <option
+                  v-for="item in taskStatuses"
+                  :key="item.value"
+                  :value="item.value"
+                >
+                  {{ item.label }}
+                </option>
+              </TomSelect>
             </div>
 
             <div>
@@ -191,13 +218,21 @@ const handleSubmitTask = async () => {
               >
                 Priority <span class="text-danger">*</span>
               </FormLabel>
-              <FormSelect id="task-priority" v-model="form.priority" required>
-                <option value="" disabled>Select priority</option>
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </FormSelect>
+              <TomSelect
+                id="task-priority"
+                v-model="form.priority"
+                class="w-full [&_.dropdown-input-wrap]:hidden"
+                required
+                :options="{ placeholder: 'Select priority' }"
+              >
+                <option
+                  v-for="item in taskPriorities"
+                  :key="item.value"
+                  :value="item.value"
+                >
+                  {{ item.label }}
+                </option>
+              </TomSelect>
             </div>
           </div>
 
@@ -209,10 +244,22 @@ const handleSubmitTask = async () => {
             >
               Due Date <span class="text-danger">*</span>
             </FormLabel>
-            <FormInput
+            <Litepicker
               id="task-due-date"
               v-model="form.due_date"
-              type="date"
+              :options="{
+                autoApply: false,
+                position: 'top left',
+                format: 'D MMM, YYYY',
+                dropdowns: {
+                  minYear: 2000,
+                  maxYear: null,
+                  months: true,
+                  years: true,
+                },
+                maxDate: props.weddingDate,
+              }"
+              class="w-full"
               required
             />
           </div>
@@ -224,14 +271,25 @@ const handleSubmitTask = async () => {
                 for="task-user"
                 class="font-medium text-slate-700 dark:text-slate-300 mb-1.5"
               >
-                Assigned To (User ID)
+                Assigned To <span class="text-danger">*</span>
               </FormLabel>
-              <FormInput
+              <TomSelect
                 id="task-user"
-                v-model.number="form.user_id"
-                type="number"
-                placeholder="User ID"
-              />
+                v-model="assigneeIdsString"
+                class="w-full [&_.dropdown-input-wrap]:hidden"
+                multiple
+                required
+                :options="{ placeholder: 'Select users' }"
+                :confirmOnDelete="false"
+              >
+                <option
+                  v-for="user in projectUsers"
+                  :key="user.id"
+                  :value="user.id.toString()"
+                >
+                  {{ user.name }}
+                </option>
+              </TomSelect>
             </div>
 
             <div>
@@ -241,16 +299,20 @@ const handleSubmitTask = async () => {
               >
                 Category
               </FormLabel>
-              <FormSelect id="task-category" v-model="form.task_category_id">
-                <option value="" disabled>Select category</option>
+              <TomSelect
+                id="task-category"
+                v-model="taskCategoryIdString"
+                class="w-full [&_.dropdown-input-wrap]:hidden"
+                :options="{ placeholder: 'Select category' }"
+              >
                 <option
                   v-for="cat in taskCategories"
                   :key="cat.id"
-                  :value="cat.id"
+                  :value="cat.id.toString()"
                 >
                   {{ cat.name }}
                 </option>
-              </FormSelect>
+              </TomSelect>
             </div>
           </div>
         </div>
