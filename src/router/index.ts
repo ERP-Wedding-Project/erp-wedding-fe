@@ -45,6 +45,11 @@ const router = createRouter({
       ],
     },
     {
+      path: "/onboarding",
+      name: "onboarding",
+      component: () => import("../views/client/Onboarding.vue"),
+    },
+    {
       path: "/login",
       name: "login",
       component: () => import("../views/auth/Login.vue"),
@@ -135,6 +140,31 @@ router.beforeEach(async (to, from, next) => {
 
   if (to.name === "login-system-admin" && !isSystemAdmin) {
     return next({ name: "login" });
+  }
+
+  if (isAuthenticatedAndAllowedToProceed && !isSystemAdmin) {
+    const userString = localStorage.getItem("user");
+    if (userString) {
+      const user = JSON.parse(userString);
+      const roles = getRoles();
+      if (roles.includes("User") || (user.list_roles && user.list_roles.includes("User"))) {
+        if (user.email_verified_at == null && to.name !== "verify-email" && to.name !== "login" && to.name !== "logout") {
+          return next({ name: "verify-email" });
+        }
+        
+        if (user.email_verified_at != null) {
+          if (!user.complete_onboarding && to.name !== "onboarding" && to.name !== "login" && to.name !== "logout") {
+            return next({ name: "onboarding" });
+          }
+          if (user.complete_onboarding && to.name === "onboarding") {
+            return next({ name: "dashboard-client" });
+          }
+          if (user.complete_onboarding && to.name === "verify-email") {
+            return next({ name: "dashboard-client" });
+          }
+        }
+      }
+    }
   }
 
   if (to.meta.guestOnly && isAuthenticatedAndAllowedToProceed) {
