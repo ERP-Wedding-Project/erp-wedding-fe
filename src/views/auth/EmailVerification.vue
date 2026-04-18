@@ -14,13 +14,14 @@ const { resendVerificationEmail, unauthenticate, verifyEmail } = useAuthApi();
 const { getUser } = useAuthStore();
 console.log(getUser, "getUser");
 
-const isVerifying = ref(false);
+const verificationStatus = ref<"idle" | "verifying" | "success" | "error">("idle");
+const redirectCountdown = ref(3);
 
 onMounted(async () => {
   const { id, hash, expires, signature } = route.query;
   
   if (id && hash && expires && signature) {
-    isVerifying.value = true;
+    verificationStatus.value = "verifying";
     try {
       await verifyEmail({
         id: id as string,
@@ -28,11 +29,25 @@ onMounted(async () => {
         expires: expires as string,
         signature: signature as string
       });
-      router.push({ name: 'dashboard-client' });
+      verificationStatus.value = "success";
+      
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+          const user = JSON.parse(userStr);
+          user.email_verified_at = new Date().toISOString(); 
+          localStorage.setItem("user", JSON.stringify(user));
+      }
+
+      const redirectTimer = setInterval(() => {
+        redirectCountdown.value--;
+        if (redirectCountdown.value <= 0) {
+          clearInterval(redirectTimer);
+          router.push({ name: 'dashboard-client' });
+        }
+      }, 1000);
     } catch (error) {
       console.error("Verification failed", error);
-    } finally {
-      isVerifying.value = false;
+      verificationStatus.value = "error";
     }
   }
 });
@@ -132,110 +147,164 @@ onUnmounted(() => {
           <span class="text-lg font-semibold text-wedding-primary">WedHub</span>
         </div>
 
-        <!-- Icon Envelope Animasi -->
-        <div class="relative inline-flex items-center justify-center mb-8">
-          <!-- Lingkaran luar pulse -->
-          <span
-            class="absolute inline-flex h-28 w-28 rounded-full bg-wedding-primary/10 animate-ping opacity-40"
-          ></span>
+        <!-- States When Verifying -->
+        <div v-if="verificationStatus === 'verifying'">
+          <div class="relative inline-flex items-center justify-center mb-8">
+            <span class="absolute inline-flex h-28 w-28 rounded-full bg-wedding-primary/10 animate-ping opacity-40"></span>
+            <div class="relative flex items-center justify-center w-24 h-24 rounded-full bg-wedding-primary/15 border-2 border-wedding-primary/30">
+              <Lucide icon="Loader" class="w-11 h-11 text-wedding-primary animate-spin" />
+            </div>
+          </div>
+          <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Verifying Email...</h2>
+          <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-1">
+            Please wait while we verify your email address.
+          </p>
+        </div>
+
+        <!-- States When Success -->
+        <div v-else-if="verificationStatus === 'success'">
+          <div class="relative inline-flex items-center justify-center mb-8">
+            <div class="relative flex items-center justify-center w-24 h-24 rounded-full bg-green-100 border-2 border-green-300">
+              <Lucide icon="CheckCircle" class="w-11 h-11 text-green-500" />
+            </div>
+          </div>
+          <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Email Verified!</h2>
+          <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-4">
+            Your email has been successfully verified.
+          </p>
+          <div class="bg-wedding-primary/10 rounded-2xl p-4 mb-6">
+             <p class="text-wedding-primary font-semibold text-sm">
+               Redirecting to dashboard in <span class="text-lg mx-1">{{ redirectCountdown }}</span> seconds...
+             </p>
+          </div>
+          <button @click="router.push({ name: 'dashboard-client' })" class="w-full py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-200 shadow-md bg-wedding-primary hover:bg-wedding-secondary text-white hover:shadow-lg">
+            Go to dashboard now
+          </button>
+        </div>
+
+        <!-- States When Error -->
+        <div v-else-if="verificationStatus === 'error'">
+          <div class="relative inline-flex items-center justify-center mb-8">
+            <div class="relative flex items-center justify-center w-24 h-24 rounded-full bg-red-100 border-2 border-red-300">
+              <Lucide icon="XCircle" class="w-11 h-11 text-red-500" />
+            </div>
+          </div>
+          <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Verification Failed</h2>
+          <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
+            The verification link is invalid or has expired.
+          </p>
+          <button @click="verificationStatus = 'idle'" class="w-full py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-200 shadow-md bg-wedding-primary hover:bg-wedding-secondary text-white hover:shadow-lg">
+            Request new link
+          </button>
+        </div>
+
+        <!-- Default State (Check Inbox) -->
+        <div v-else>
+          <!-- Icon Envelope Animasi -->
+          <div class="relative inline-flex items-center justify-center mb-8">
+            <!-- Lingkaran luar pulse -->
+            <span
+              class="absolute inline-flex h-28 w-28 rounded-full bg-wedding-primary/10 animate-ping opacity-40"
+            ></span>
+            <div
+              class="relative flex items-center justify-center w-24 h-24 rounded-full bg-wedding-primary/15 border-2 border-wedding-primary/30"
+            >
+              <Lucide icon="MailCheck" class="w-11 h-11 text-wedding-primary" />
+            </div>
+          </div>
+
+          <!-- Judul -->
+          <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">
+            Check your inbox
+          </h2>
+          <p
+            class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-1"
+          >
+            We've sent a verification link to
+          </p>
+          <p class="text-wedding-primary font-semibold text-base mb-8">
+            <!-- {{ (user as any)?.email ?? "your email address" }} -->
+          </p>
+
+          <!-- Steps -->
           <div
-            class="relative flex items-center justify-center w-24 h-24 rounded-full bg-wedding-primary/15 border-2 border-wedding-primary/30"
+            class="bg-white dark:bg-darkmode-800 rounded-2xl p-5 mb-8 text-left shadow-sm border border-slate-100 dark:border-darkmode-700 space-y-4"
           >
-            <Lucide icon="MailCheck" class="w-11 h-11 text-wedding-primary" />
-          </div>
-        </div>
-
-        <!-- Judul -->
-        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">
-          Check your inbox
-        </h2>
-        <p
-          class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-1"
-        >
-          We've sent a verification link to
-        </p>
-        <p class="text-wedding-primary font-semibold text-base mb-8">
-          <!-- {{ (user as any)?.email ?? "your email address" }} -->
-        </p>
-
-        <!-- Steps -->
-        <div
-          class="bg-white dark:bg-darkmode-800 rounded-2xl p-5 mb-8 text-left shadow-sm border border-slate-100 dark:border-darkmode-700 space-y-4"
-        >
-          <div class="flex items-start gap-3">
-            <div
-              class="flex-shrink-0 w-6 h-6 rounded-full bg-wedding-primary/15 flex items-center justify-center mt-0.5"
-            >
-              <span class="text-wedding-primary text-xs font-bold">1</span>
-            </div>
-            <p class="text-sm text-slate-600 dark:text-slate-300">
-              Open the email from
-              <span class="font-medium text-slate-800 dark:text-white"
-                >WedHub</span
+            <div class="flex items-start gap-3">
+              <div
+                class="flex-shrink-0 w-6 h-6 rounded-full bg-wedding-primary/15 flex items-center justify-center mt-0.5"
               >
-            </p>
-          </div>
-          <div class="flex items-start gap-3">
-            <div
-              class="flex-shrink-0 w-6 h-6 rounded-full bg-wedding-primary/15 flex items-center justify-center mt-0.5"
-            >
-              <span class="text-wedding-primary text-xs font-bold">2</span>
+                <span class="text-wedding-primary text-xs font-bold">1</span>
+              </div>
+              <p class="text-sm text-slate-600 dark:text-slate-300">
+                Open the email from
+                <span class="font-medium text-slate-800 dark:text-white"
+                  >WedHub</span
+                >
+              </p>
             </div>
-            <p class="text-sm text-slate-600 dark:text-slate-300">
-              Click the
-              <span class="font-medium text-slate-800 dark:text-white"
-                >"Verify Email"</span
+            <div class="flex items-start gap-3">
+              <div
+                class="flex-shrink-0 w-6 h-6 rounded-full bg-wedding-primary/15 flex items-center justify-center mt-0.5"
               >
-              button inside
-            </p>
-          </div>
-          <div class="flex items-start gap-3">
-            <div
-              class="flex-shrink-0 w-6 h-6 rounded-full bg-wedding-primary/15 flex items-center justify-center mt-0.5"
-            >
-              <span class="text-wedding-primary text-xs font-bold">3</span>
+                <span class="text-wedding-primary text-xs font-bold">2</span>
+              </div>
+              <p class="text-sm text-slate-600 dark:text-slate-300">
+                Click the
+                <span class="font-medium text-slate-800 dark:text-white"
+                  >"Verify Email"</span
+                >
+                button inside
+              </p>
             </div>
-            <p class="text-sm text-slate-600 dark:text-slate-300">
-              You'll be redirected back to your dashboard automatically
-            </p>
+            <div class="flex items-start gap-3">
+              <div
+                class="flex-shrink-0 w-6 h-6 rounded-full bg-wedding-primary/15 flex items-center justify-center mt-0.5"
+              >
+                <span class="text-wedding-primary text-xs font-bold">3</span>
+              </div>
+              <p class="text-sm text-slate-600 dark:text-slate-300">
+                You'll be redirected back to your dashboard automatically
+              </p>
+            </div>
           </div>
-        </div>
 
-        <!-- Resend Button -->
-        <button
-          type="button"
-          :disabled="!canResend || isResending"
-          @click="onResend"
-          class="w-full py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-200 shadow-md mb-3"
-          :class="
-            canResend && !isResending
-              ? 'bg-wedding-primary hover:bg-wedding-secondary text-white hover:shadow-lg cursor-pointer'
-              : 'bg-slate-200 dark:bg-darkmode-700 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
-          "
-        >
-          <span
-            v-if="isResending"
-            class="flex items-center justify-center gap-2"
-          >
-            <Lucide icon="Loader" class="w-4 h-4 animate-spin" />
-            Sending...
-          </span>
-          <span v-else-if="!canResend"> Resend in {{ countdown }}s </span>
-          <span v-else> Resend verification email </span>
-        </button>
-
-        <p
-          class="mt-2 text-xs text-slate-400 dark:text-slate-500 leading-relaxed"
-        >
-          Didn't receive the email? Check your spam folder, or
+          <!-- Resend Button -->
           <button
+            type="button"
+            :disabled="!canResend || isResending"
             @click="onResend"
-            :disabled="!canResend"
-            class="text-wedding-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full py-3.5 rounded-full font-semibold text-sm tracking-wide transition-all duration-200 shadow-md mb-3"
+            :class="
+              canResend && !isResending
+                ? 'bg-wedding-primary hover:bg-wedding-secondary text-white hover:shadow-lg cursor-pointer'
+                : 'bg-slate-200 dark:bg-darkmode-700 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none'
+            "
           >
-            try again</button
-          >.
-        </p>
+            <span
+              v-if="isResending"
+              class="flex items-center justify-center gap-2"
+            >
+              <Lucide icon="Loader" class="w-4 h-4 animate-spin" />
+              Sending...
+            </span>
+            <span v-else-if="!canResend"> Resend in {{ countdown }}s </span>
+            <span v-else> Resend verification email </span>
+          </button>
+
+          <p
+            class="mt-2 text-xs text-slate-400 dark:text-slate-500 leading-relaxed"
+          >
+            Didn't receive the email? Check your spam folder, or
+            <button
+              @click="onResend"
+              :disabled="!canResend"
+              class="text-wedding-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              try again</button
+            >.
+          </p>
+        </div>
       </div>
     </div>
   </div>
