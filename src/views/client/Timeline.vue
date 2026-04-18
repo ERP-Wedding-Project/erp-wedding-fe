@@ -659,6 +659,8 @@ const closeTaskDetailModal = () => {
     <TaskDetailModal
       :open="isTaskDetailModalOpen"
       :project-code="activeProjectCode"
+      :wedding-date="activeWeddingDate"
+      :project-users="projectUsers"
       :task="selectedTask"
       @close="closeTaskDetailModal"
       @success="fetchTimelineData"
