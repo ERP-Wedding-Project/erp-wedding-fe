@@ -14,10 +14,10 @@ const menu: Array<Menu | "divider"> = [
   {
     icon: "DollarSign",
     pageName: "budget-tracker-client",
-    title: "Budget Tracker",
+    title: "Budget",
   },
   {
-    icon: "DollarSign",
+    icon: "PiggyBank",
     pageName: "saving-client",
     title: "Saving",
   },

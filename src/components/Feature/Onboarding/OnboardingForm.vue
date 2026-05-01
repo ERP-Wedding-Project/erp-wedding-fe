@@ -53,11 +53,13 @@ const formError = ref<FormError>({
   creator_role: null,
   total_budget: null,
   template_id: null,
-  venue: {
-    place_name: null,
-    address: null,
-    description: null,
-  },
+  venue: [
+    {
+      place_name: null,
+      address: null,
+      description: null,
+    },
+  ],
   partner_email: null,
   avatar: null,
 })

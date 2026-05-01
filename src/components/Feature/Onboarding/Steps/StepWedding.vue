@@ -60,14 +60,14 @@ const i18n = useI18n()
       <FormLabel>{{i18n.t('Venue Place Name')}}
         <RequiredField/>
       </FormLabel>
-      <FormInput v-model="form.venue.place_name" :placeholder="i18n.t('Please enter your venue place name')"
-                 :class="{'border-danger': isFormError(responseError, 'venue.place_name') || formError.venue.place_name}"
+      <FormInput v-model="form.venue[0].place_name" :placeholder="i18n.t('Please enter your venue place name')"
+                 :class="{'border-danger': isFormError(responseError, 'venue.0.place_name') || formError.venue[0].place_name}"
       />
-      <div class="text-xs text-danger mt-2" v-if="formError.venue.place_name">
-        {{ formError.venue.place_name }}
+      <div class="text-xs text-danger mt-2" v-if="formError.venue[0].place_name">
+        {{ formError.venue[0].place_name }}
       </div>
-      <div class="text-xs text-danger mt-2" v-if="isFormError(responseError, 'venue.place_name')"
-           v-html="getFormErrorMessages(responseError, 'venue.place_name')">
+      <div class="text-xs text-danger mt-2" v-if="isFormError(responseError, 'venue.0.place_name')"
+           v-html="getFormErrorMessages(responseError, 'venue.0.place_name')">
       </div>
     </div>
 
@@ -75,14 +75,14 @@ const i18n = useI18n()
       <FormLabel>{{i18n.t('Venue Address')}}
         <RequiredField/>
       </FormLabel>
-      <FormInput v-model="form.venue.address" :placeholder="i18n.t('Please enter your venue address')"
-                 :class="{'border-danger': isFormError(responseError, 'venue.address') || formError.venue.address}"
+      <FormInput v-model="form.venue[0].address" :placeholder="i18n.t('Please enter your venue address')"
+                 :class="{'border-danger': isFormError(responseError, 'venue.0.address') || formError.venue[0].address}"
       />
-      <div class="text-xs text-danger mt-2" v-if="formError.venue.address">
-        {{ formError.venue.address }}
+      <div class="text-xs text-danger mt-2" v-if="formError.venue[0].address">
+        {{ formError.venue[0].address }}
       </div>
-      <div class="text-xs text-danger mt-2" v-if="isFormError(responseError, 'venue.address')"
-           v-html="getFormErrorMessages(responseError, 'venue.address')">
+      <div class="text-xs text-danger mt-2" v-if="isFormError(responseError, 'venue.0.address')"
+           v-html="getFormErrorMessages(responseError, 'venue.0.address')">
       </div>
     </div>
 
@@ -90,14 +90,14 @@ const i18n = useI18n()
       <FormLabel>{{i18n.t('Venue Description')}}
         <RequiredField/>
       </FormLabel>
-      <FormInput v-model="form.venue.description" :placeholder="i18n.t('Please enter your venue description')"
-                 :class="{'border-danger': isFormError(responseError, 'venue.description') || formError.venue.description}"
+      <FormInput v-model="form.venue[0].description" :placeholder="i18n.t('Please enter your venue description')"
+                 :class="{'border-danger': isFormError(responseError, 'venue.0.description') || formError.venue[0].description}"
       />
-      <div class="text-xs text-danger mt-2" v-if="formError.venue.description">
-        {{ formError.venue.description }}
+      <div class="text-xs text-danger mt-2" v-if="formError.venue[0].description">
+        {{ formError.venue[0].description }}
       </div>
-      <div class="text-xs text-danger mt-2" v-if="isFormError(responseError, 'venue.description')"
-           v-html="getFormErrorMessages(responseError, 'venue.description')">
+      <div class="text-xs text-danger mt-2" v-if="isFormError(responseError, 'venue.0.description')"
+           v-html="getFormErrorMessages(responseError, 'venue.0.description')">
       </div>
     </div>
 

@@ -83,8 +83,7 @@ watch(
       try {
         isLoading.value = true;
         const res = await getTaskDetail(props.projectCode, props.task.id);
-        taskDetail.value =
-          res?.payload?.data || res?.data || res?.payload || null;
+        taskDetail.value = res?.payload?.data || null;
           
         if (taskDetail.value) {
           form.title = taskDetail.value.title;
@@ -143,7 +142,7 @@ const saveChanges = async () => {
     
     // refetch data
     const res = await getTaskDetail(props.projectCode, props.task.id);
-    taskDetail.value = res?.payload?.data || res?.data || res?.payload || null;
+    taskDetail.value = res?.payload?.data || null;
   } catch (e) {
     // handled
   } finally {
@@ -294,10 +293,27 @@ const handleDelete = async () => {
                 Assigned To
               </div>
               <div v-if="!isEditing" class="flex items-center gap-2">
-                <div class="w-7 h-7 rounded-full bg-slate-200 overflow-hidden shadow-sm">
-                  <img src="https://ui-avatars.com/api/?name=User" class="w-full h-full object-cover"/>
+                <div class="flex -space-x-2">
+                  <template v-if="taskDetail.assignees && taskDetail.assignees.length > 0">
+                    <div
+                      v-for="user in taskDetail.assignees"
+                      :key="user.id"
+                      class="w-7 h-7 rounded-full bg-slate-200 overflow-hidden shadow-sm border-2 border-white first:ml-0"
+                    >
+                      <img
+                        :src="user.avatar?.url || `https://ui-avatars.com/api/?name=${user.name}`"
+                        class="w-full h-full object-cover font-bold"
+                      />
+                    </div>
+                  </template>
+                  <div
+                    v-else
+                    class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold"
+                  >
+                    <Lucide icon="User" class="w-4 h-4" />
+                  </div>
                 </div>
-                <span class="text-sm font-medium text-slate-700">
+                <span class="text-sm font-medium text-slate-700 ml-2">
                   {{
                     taskDetail.assignees && taskDetail.assignees.length > 0
                       ? taskDetail.assignees.map((u: any) => u.name).join(", ")
@@ -310,7 +326,7 @@ const handleDelete = async () => {
                   v-model="assigneeIdsString"
                   class="w-full [&_.dropdown-input-wrap]:hidden"
                   multiple
-                  :options="{ placeholder: 'Select users' }"
+                  :options="{ placeholder: 'Select users', dropdownParent: 'body' }"
                 >
                   <option v-for="user in projectUsers" :key="user.id" :value="user.id.toString()">
                     {{ user.name }}
@@ -343,7 +359,7 @@ const handleDelete = async () => {
                 <TomSelect
                   v-model="form.priority"
                   class="w-full [&_.dropdown-input-wrap]:hidden"
-                  :options="{ placeholder: 'Select priority' }"
+                  :options="{ placeholder: 'Select priority', dropdownParent: 'body' }"
                 >
                   <option v-for="item in taskPriorities" :key="item.value" :value="item.value">{{ item.label }}</option>
                 </TomSelect>
@@ -366,7 +382,7 @@ const handleDelete = async () => {
                 <TomSelect
                   v-model="taskCategoryIdString"
                   class="w-full [&_.dropdown-input-wrap]:hidden"
-                  :options="{ placeholder: 'Select category' }"
+                  :options="{ placeholder: 'Select category', dropdownParent: 'body' }"
                 >
                   <option v-for="cat in taskCategories" :key="cat.id" :value="cat.id.toString()">{{ cat.name }}</option>
                 </TomSelect>
@@ -378,7 +394,17 @@ const handleDelete = async () => {
               <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
                 Estimated Cost
               </div>
-              <div class="text-sm font-bold text-slate-800">Rp 0</div>
+              <div class="text-sm font-bold text-slate-800">
+                {{
+                  taskDetail.expense
+                    ? new Intl.NumberFormat("id-ID", {
+                        style: "currency",
+                        currency: "IDR",
+                        maximumFractionDigits: 0,
+                      }).format(taskDetail.expense.amount)
+                    : "Rp 0"
+                }}
+              </div>
             </div>
           </div>
 

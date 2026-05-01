@@ -4,6 +4,7 @@ import type {
   ResponseData,
   ResponseDataCollectionWithoutPagination,
   ResponseError,
+  ResponseSingleData,
 } from "@/types/response";
 import HandlerService from "@/core/services/HandlerService";
 import { ref } from "vue";
@@ -129,7 +130,7 @@ export default function useTaskApi() {
   const getTaskDetail = async (projectCode: string, taskId: number) => {
     try {
       loadingBlock();
-      const response = await ApiService.get<any>(
+      const response = await ApiService.get<ResponseSingleData<ITask>>(
         `projects/${projectCode}/tasks/${taskId}?include=task_category,assignees`,
       );
       return response.data;

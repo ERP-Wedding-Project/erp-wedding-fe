@@ -24,7 +24,7 @@ const route: Route = useRoute();
 const router = useRouter();
 let formattedMenu = reactive<Array<FormattedMenu | "divider">>([]);
 const setFormattedMenu = (
-  computedFormattedMenu: Array<FormattedMenu | "divider">
+  computedFormattedMenu: Array<FormattedMenu | "divider">,
 ) => {
   Object.assign(formattedMenu, computedFormattedMenu);
 };
@@ -45,7 +45,7 @@ watch(
   computed(() => route.path),
   () => {
     delete route.forceActiveMenu;
-  }
+  },
 );
 
 onMounted(() => {
@@ -114,11 +114,13 @@ onMounted(() => {
                         }
                       })(menu.pageName)
                 "
-                @click="(event: MouseEvent) => {
-                  event.preventDefault();
-                  linkTo(menu, router);
-                  setFormattedMenu([...formattedMenu]);
-                }"
+                @click="
+                  (event: MouseEvent) => {
+                    event.preventDefault();
+                    linkTo(menu, router);
+                    setFormattedMenu([...formattedMenu]);
+                  }
+                "
                 :class="[
                   menu.active ? 'side-menu side-menu--active' : 'side-menu',
                 ]"
@@ -173,11 +175,13 @@ onMounted(() => {
                           ? 'side-menu side-menu--active'
                           : 'side-menu',
                       ]"
-                      @click="(event: MouseEvent) => {
-                        event.preventDefault();
-                        linkTo(subMenu, router);
-                        setFormattedMenu([...formattedMenu]);
-                      }"
+                      @click="
+                        (event: MouseEvent) => {
+                          event.preventDefault();
+                          linkTo(subMenu, router);
+                          setFormattedMenu([...formattedMenu]);
+                        }
+                      "
                     >
                       <div class="side-menu__icon">
                         <Lucide :icon="subMenu.icon" />
@@ -237,11 +241,13 @@ onMounted(() => {
                                 ? 'side-menu side-menu--active'
                                 : 'side-menu',
                             ]"
-                            @click="(event: MouseEvent) => {
-                              event.preventDefault();
-                              linkTo(lastSubMenu, router);
-                              setFormattedMenu([...formattedMenu]);
-                            }"
+                            @click="
+                              (event: MouseEvent) => {
+                                event.preventDefault();
+                                linkTo(lastSubMenu, router);
+                                setFormattedMenu([...formattedMenu]);
+                              }
+                            "
                           >
                             <div class="side-menu__icon">
                               <Lucide :icon="lastSubMenu.icon" />
