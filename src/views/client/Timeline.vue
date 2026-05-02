@@ -130,7 +130,7 @@ const formatTaskForDisplay = (t: ITask) => {
     ],
     avatars: t.assignees
       ?.filter((u: any) => u.avatar)
-      .map((u: any) => u.avatar),
+      .map((u: any) => u.avatar?.url),
     initials:
       t.assignees
         ?.filter((u: any) => !u.avatar)

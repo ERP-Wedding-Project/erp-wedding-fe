@@ -199,7 +199,7 @@ const handleSubmitTask = async () => {
                 v-model="form.status"
                 class="w-full [&_.dropdown-input-wrap]:hidden"
                 required
-                :options="{ placeholder: 'Select status' }"
+                :options="{ placeholder: 'Select status', dropdownParent: 'body' }"
               >
                 <option
                   v-for="item in taskStatuses"
@@ -223,7 +223,7 @@ const handleSubmitTask = async () => {
                 v-model="form.priority"
                 class="w-full [&_.dropdown-input-wrap]:hidden"
                 required
-                :options="{ placeholder: 'Select priority' }"
+                :options="{ placeholder: 'Select priority', dropdownParent: 'body' }"
               >
                 <option
                   v-for="item in taskPriorities"
@@ -279,7 +279,7 @@ const handleSubmitTask = async () => {
                 class="w-full [&_.dropdown-input-wrap]:hidden"
                 multiple
                 required
-                :options="{ placeholder: 'Select users' }"
+                :options="{ placeholder: 'Select users', dropdownParent: 'body' }"
                 :confirmOnDelete="false"
               >
                 <option
@@ -303,7 +303,7 @@ const handleSubmitTask = async () => {
                 id="task-category"
                 v-model="taskCategoryIdString"
                 class="w-full [&_.dropdown-input-wrap]:hidden"
-                :options="{ placeholder: 'Select category' }"
+                :options="{ placeholder: 'Select category', dropdownParent: 'body' }"
               >
                 <option
                   v-for="cat in taskCategories"

@@ -1,4 +1,7 @@
 import type ITaskCategory from "./TaskCategory";
+import type IUser from "./User";
+import type IProject from "./Project";
+import type IExpense from "./Expense";
 
 export default interface ITask {
   id: number;
@@ -14,5 +17,8 @@ export default interface ITask {
   updated_at: string;
   deleted_at: string | null;
   task_category?: ITaskCategory;
-  assignees?: any[];
+  assignees?: IUser[];
+  project?: IProject;
+  expense?: IExpense;
 }
+
