@@ -16,7 +16,7 @@ export default function useProjectApi() {
       loadingBlock();
       const response = await ApiService.get<
         ResponseDataCollectionWithoutPagination<any>
-      >("projects?include=users");
+      >("projects?include=users&include=budget_summary");
 
       return response.data;
     } catch (e: any) {
@@ -29,9 +29,9 @@ export default function useProjectApi() {
   const getDetailProject = async (code: string) => {
     try {
       loadingBlock();
-      const response = await ApiService.get<
-        ResponseSingleData<any>
-      >(`projects/${code}?include=users`);
+      const response = await ApiService.get<ResponseSingleData<any>>(
+        `projects/${code}?include=users&include=budget_summary`,
+      );
 
       return response.data;
     } catch (e: any) {

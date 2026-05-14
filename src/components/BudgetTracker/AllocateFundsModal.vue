@@ -4,16 +4,13 @@ import Lucide from "@/components/Base/Lucide";
 import { Dialog } from "@/components/Base/Headless";
 import { FormInput, FormLabel, FormTextarea } from "@/components/Base/Form";
 import TomSelect from "@/components/Base/TomSelect";
-import useExpenseApi, { type FormExpense } from "@/api/client/ExpenseApi";
-import useExpenseCategoryApi from "@/api/client/ExpenseCategoryApi";
-import useTaskApi from "@/api/client/TaskApi";
+import useSavingApi, { type FormSaving } from "@/api/client/SavingApi";
+import useExpenseApi from "@/api/client/ExpenseApi";
 import { allowOnlyNumbers } from "@/core/helpers/utils";
 
 const props = defineProps<{
   open: boolean;
   projectCode: string;
-  initialCategoryId?: number | null;
-  expense?: any | null;
 }>();
 
 const emit = defineEmits<{
@@ -22,48 +19,37 @@ const emit = defineEmits<{
 }>();
 
 const isSubmitting = ref(false);
-const { createExpense, updateExpense, responseError } = useExpenseApi();
-const { getListExpenseCategory } = useExpenseCategoryApi();
-const { getListTask } = useTaskApi();
+const isLoading = ref(false);
+const { createSaving, responseError } = useSavingApi();
+const { getListExpense } = useExpenseApi();
 
-const expenseCategories = ref<any[]>([]);
-const tasks = ref<any[]>([]);
+const expenses = ref<any[]>([]);
 
 const fetchData = async () => {
   try {
-    const [catRes, taskRes] = await Promise.all([
-      getListExpenseCategory(),
-      getListTask(props.projectCode, { show_all: 1 }),
-    ]);
-
-    expenseCategories.value = catRes?.payload?.data ?? [];
-    tasks.value = taskRes?.payload?.data ?? [];
+    isLoading.value = true;
+    const expenseRes = await getListExpense(props.projectCode);
+    expenses.value = expenseRes?.payload?.data ?? [];
   } catch (_) {
     // handled
+  } finally {
+    isLoading.value = false;
   }
 };
 
-const defaultForm: FormExpense = {
-  expense_category_id: 0,
-  description: "",
+const defaultForm: FormSaving = {
+  type: "ALLOCATE",
   amount: 0,
-  task_id: null,
+  note: "",
+  expense_id: null,
 };
 
-const form = reactive<FormExpense>({ ...defaultForm });
+const form = reactive<FormSaving>({ ...defaultForm });
 
-const categoryIdString = computed({
-  get: () =>
-    form.expense_category_id ? form.expense_category_id.toString() : "",
+const expenseIdString = computed({
+  get: () => (form.expense_id ? form.expense_id.toString() : ""),
   set: (val: string) => {
-    form.expense_category_id = val ? parseInt(val, 10) : 0;
-  },
-});
-
-const taskIdString = computed({
-  get: () => (form.task_id ? form.task_id.toString() : ""),
-  set: (val: string) => {
-    form.task_id = val ? parseInt(val, 10) : null;
+    form.expense_id = val ? parseInt(val, 10) : null;
   },
 });
 
@@ -80,23 +66,10 @@ const formattedAmount = computed({
 });
 
 watch(
-  [() => props.open, () => props.expense],
-  ([newOpen, newExpense]) => {
+  () => props.open,
+  (newOpen) => {
     if (newOpen) {
-      if (newExpense) {
-        // Edit Mode - Load existing data
-        form.expense_category_id = newExpense.expense_category_id;
-        form.description = newExpense.description || "";
-        form.amount = newExpense.amount || 0;
-        form.task_id = newExpense.task_id || null;
-      } else {
-        // Create Mode - Reset to defaults
-        Object.assign(form, defaultForm);
-        if (props.initialCategoryId) {
-          form.expense_category_id = props.initialCategoryId;
-        }
-      }
-
+      Object.assign(form, defaultForm);
       fetchData();
       if (responseError.value) {
         responseError.value = null;
@@ -112,24 +85,12 @@ const closeModal = () => {
 
 const handleSubmit = async () => {
   try {
-    if (form.expense_category_id === 0) {
-      alert("Please select a category");
-      return;
-    }
-
     isSubmitting.value = true;
-    if (props.expense) {
-      await updateExpense({
-        projectCode: props.projectCode,
-        expenseId: props.expense.id,
-        payload: { ...form },
-      });
-    } else {
-      await createExpense({
-        projectCode: props.projectCode,
-        payload: { ...form },
-      });
-    }
+
+    await createSaving({
+      projectCode: props.projectCode,
+      payload: form,
+    });
     emit("success");
     closeModal();
   } catch (_) {
@@ -149,22 +110,18 @@ const handleSubmit = async () => {
           <div
             class="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 text-primary"
           >
-            <Lucide icon="DollarSign" class="w-5 h-5" />
+            <Lucide icon="ArrowDownCircle" class="w-5 h-5" />
           </div>
           <div>
             <h3
               class="text-base font-semibold text-slate-800 dark:text-slate-100"
             >
-              {{ expense ? "Edit Expense" : "Add New Expense" }}
+              Allocate Funds
             </h3>
             <p
               class="text-xs text-slate-500 dark:text-slate-400 font-normal mt-0.5"
             >
-              {{
-                expense
-                  ? "Update existing expenditure details"
-                  : "Record a new expenditure for your wedding"
-              }}
+              Allocate your savings to a specific expense
             </p>
           </div>
         </div>
@@ -178,7 +135,18 @@ const handleSubmit = async () => {
 
       <!-- Modal Body -->
       <form @submit.prevent="handleSubmit">
-        <div class="p-6 space-y-5">
+        <div
+          v-if="isLoading"
+          class="p-20 flex flex-col items-center justify-center"
+        >
+          <Lucide
+            icon="Loader"
+            class="w-8 h-8 animate-spin text-primary mb-3"
+          />
+          <div class="text-slate-500 font-medium">Loading form data...</div>
+        </div>
+
+        <div v-else class="p-6 space-y-5">
           <!-- Error Alert -->
           <div
             v-if="responseError"
@@ -188,89 +156,43 @@ const handleSubmit = async () => {
             <span>{{ responseError.message }}</span>
           </div>
 
-          <!-- Related Task -->
+          <!-- Related Expense -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <FormLabel
-                for="expense-task"
+                for="allocate-expense"
                 class="font-medium text-slate-700 dark:text-slate-300"
               >
-                Link to Task
+                Link to Expense
               </FormLabel>
               <span class="text-[10px] text-slate-400 font-medium italic"
                 >Optional</span
               >
             </div>
             <TomSelect
-              id="expense-task"
-              v-model="taskIdString"
+              id="allocate-expense"
+              v-model="expenseIdString"
               class="w-full"
               :options="{
-                placeholder: 'Select task',
+                placeholder: 'Select expense',
                 position: 'top',
                 dropdownParent: 'body',
               }"
             >
-              <!-- <option value="">No task linked</option> -->
-
               <option
-                v-for="task in tasks"
-                :key="task.id"
-                :value="task.id.toString()"
+                v-for="expense in expenses"
+                :key="expense.id"
+                :value="expense.id.toString()"
               >
-                {{ task.title }}
+                {{ expense.description }}
               </option>
             </TomSelect>
-          </div>
-
-          <!-- Category -->
-          <div>
-            <FormLabel
-              for="expense-category"
-              class="font-medium text-slate-700 dark:text-slate-300 mb-1.5"
-            >
-              Category <span class="text-danger">*</span>
-            </FormLabel>
-            <TomSelect
-              id="expense-category"
-              v-model="categoryIdString"
-              class="w-full"
-              required
-              :options="{
-                placeholder: 'Select category',
-                dropdownParent: 'body',
-              }"
-            >
-              <option
-                v-for="cat in expenseCategories"
-                :key="cat.id"
-                :value="cat.id.toString()"
-              >
-                {{ cat.name }}
-              </option>
-            </TomSelect>
-          </div>
-
-          <!-- Description -->
-          <div>
-            <FormLabel
-              for="expense-description"
-              class="font-medium text-slate-700 dark:text-slate-300 mb-1.5"
-            >
-              Description
-            </FormLabel>
-            <FormTextarea
-              id="expense-description"
-              v-model="form.description"
-              placeholder="e.g. Venue down payment"
-              rows="3"
-            />
           </div>
 
           <!-- Amount -->
           <div>
             <FormLabel
-              for="expense-amount"
+              for="allocate-amount"
               class="font-medium text-slate-700 dark:text-slate-300 mb-1.5"
             >
               Amount (IDR) <span class="text-danger">*</span>
@@ -282,7 +204,7 @@ const handleSubmit = async () => {
                 <span class="text-slate-500 text-sm font-bold">Rp</span>
               </div>
               <FormInput
-                id="expense-amount"
+                id="allocate-amount"
                 v-model="formattedAmount"
                 type="text"
                 class="pl-10"
@@ -292,10 +214,27 @@ const handleSubmit = async () => {
               />
             </div>
           </div>
+
+          <!-- Note -->
+          <div>
+            <FormLabel
+              for="allocate-note"
+              class="font-medium text-slate-700 dark:text-slate-300 mb-1.5"
+            >
+              Note
+            </FormLabel>
+            <FormTextarea
+              id="allocate-note"
+              v-model="form.note"
+              placeholder="Add some notes here..."
+              rows="3"
+            />
+          </div>
         </div>
 
         <!-- Modal Footer -->
         <div
+          v-if="!isLoading"
           class="px-6 py-4 flex items-center justify-end gap-3 border-t border-slate-200/60 dark:border-darkmode-400"
         >
           <button
@@ -315,14 +254,8 @@ const handleSubmit = async () => {
               icon="Loader"
               class="w-4 h-4 animate-spin"
             />
-            <Lucide v-else :icon="expense ? 'Check' : 'Plus'" class="w-4 h-4" />
-            {{
-              isSubmitting
-                ? "Saving..."
-                : expense
-                  ? "Update Expense"
-                  : "Add Expense"
-            }}
+            <Lucide v-else icon="ArrowDownCircle" class="w-4 h-4" />
+            {{ isSubmitting ? "Allocating..." : "Allocate Funds" }}
           </button>
         </div>
       </form>

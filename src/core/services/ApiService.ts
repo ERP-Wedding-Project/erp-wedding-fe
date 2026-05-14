@@ -69,6 +69,7 @@ export default class ApiService {
       throw new Error("Base url is not set");
     }
     ApiService.vueInstance.axios.defaults.baseURL = baseUrl;
+    ApiService.vueInstance.axios.defaults.withCredentials = true;
   }
 
   private static setInterceptor(): void {

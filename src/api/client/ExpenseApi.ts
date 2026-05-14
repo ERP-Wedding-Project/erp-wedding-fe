@@ -9,6 +9,7 @@ import type {
 import HandlerService from "@/core/services/HandlerService";
 import { ref } from "vue";
 import type IExpense from "@/types/entities/Expense";
+import { refreshActiveProject } from "@/core/helpers/utils";
 
 export type FormExpense = {
   expense_category_id: number;
@@ -31,6 +32,7 @@ export default function useExpenseApi() {
         request.payload,
       );
       await HandlerService.responseSuccess(response);
+      await refreshActiveProject();
     } catch (e: any) {
       await HandlerService.responseError(e, responseError);
       throw new Error(e);
@@ -51,6 +53,7 @@ export default function useExpenseApi() {
         request.payload,
       );
       await HandlerService.responseSuccess(response);
+      await refreshActiveProject();
     } catch (e: any) {
       await HandlerService.responseError(e, responseError);
       throw new Error(e);
@@ -69,6 +72,7 @@ export default function useExpenseApi() {
         `projects/${request.projectCode}/expenses/${request.expenseId}`,
       );
       await HandlerService.responseSuccess(response);
+      await refreshActiveProject();
     } catch (e: any) {
       await HandlerService.responseError(e, responseError);
       throw new Error(e);
