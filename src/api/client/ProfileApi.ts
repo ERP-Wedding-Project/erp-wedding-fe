@@ -1,12 +1,12 @@
-import {loadingBlock, loadingUnBlock} from "@/core/helpers/helpers";
+import { loadingBlock, loadingUnBlock } from "@/core/helpers/helpers";
 import ApiService from "@/core/services/ApiService";
 import type {
     ResponseData,
     ResponseError,
 } from "@/types/response";
 import HandlerService from "@/core/services/HandlerService";
-import {ref} from "vue";
-import {refreshActiveProject} from "@/core/helpers/utils";
+import { ref } from "vue";
+import { refreshActiveProject } from "@/core/helpers/utils";
 
 export interface IFormRequestProfile {
     name: string;
@@ -24,11 +24,12 @@ export default function useProfileApi() {
     const responseError = ref<ResponseError | null>(null);
     const profile = ref<any>(null);
 
-    const updateProfile = async (request: IFormRequestProfile) => {
+    const updateProfile = async (request: FormData) => {
         try {
             loadingBlock();
-            const response = await ApiService.post<IFormRequestProfile, ResponseData>(
+            const response = await ApiService.post<FormData, ResponseData>(
                 `profile/update`,
+                request
             );
             profile.value = response.data;
 
@@ -47,6 +48,7 @@ export default function useProfileApi() {
             loadingBlock();
             const response = await ApiService.post<IFormChangePasswordRequestProfile, ResponseData>(
                 'profile/update-password',
+                request
             );
             profile.value = response.data;
 

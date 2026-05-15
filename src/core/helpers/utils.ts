@@ -12,7 +12,7 @@ export const formatCurrency = (value: number | string) => {
 export const formatDate = (date: string, format: string = "D MMM, YYYY") => {
   if (!date) return "-";
   // Assuming dayjs is available globally or we import it where needed
-  return date; 
+  return date;
 };
 
 export const allowOnlyNumbers = (event: KeyboardEvent) => {
@@ -48,5 +48,15 @@ export const refreshActiveProject = async () => {
     }
   } catch (_) {
     // Fail silently – this is a background sync, not critical
+  }
+};
+
+export const getActiveProject = () => {
+  try {
+    const raw = localStorage.getItem("activeProject");
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
   }
 };

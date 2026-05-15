@@ -1,19 +1,80 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import Lucide from "@/components/Base/Lucide";
-import { FormSwitch } from "@/components/Base/Form";
-import {refreshActiveProject} from "@/core/helpers/utils.ts";
-import useProfileApi from "@/api/client/ProfileApi.ts";
+import { FormSwitch, FormInput, FormLabel } from "@/components/Base/Form";
+import Button from "@/components/Base/Button";
+import { Dialog } from "@/components/Base/Headless";
+import { refreshActiveProject, getActiveProject, formatCurrency, formatDate } from "@/core/helpers/utils";
+import useProfileApi from "@/api/client/ProfileApi";
+import { useAuthStore } from "@/stores/auth";
 
+// refreshActiveProject();
+const projectData = ref<any>(getActiveProject());
 
-refreshActiveProject()
+const authStore = useAuthStore();
+const currentUser = ref(authStore.getUser());
 
-const {profile, updateProfile, updatePassword} = useProfileApi()
+const { updateProfile, updatePassword } = useProfileApi();
 
-const weddingDate = ref("09 / 15 / 2024");
 const strictlyBudget = ref(true);
 
+// Modals state
+const isPasswordModalOpen = ref(false);
+const passwordForm = ref({
+  current_password: "",
+  password: "",
+  password_confirmation: ""
+});
 
+const isProfileModalOpen = ref(false);
+const profileForm = ref({
+  name: currentUser.value?.name || "",
+  email: currentUser.value?.email || "",
+  avatar: null as File | null
+});
+const avatarPreview = ref<string | null>(null);
+
+const handleAvatarChange = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    profileForm.value.avatar = target.files[0];
+    avatarPreview.value = URL.createObjectURL(target.files[0]);
+  }
+};
+
+const submitUpdatePassword = async () => {
+  try {
+    await updatePassword({
+      current_password: passwordForm.value.current_password,
+      password: passwordForm.value.password,
+      password_confirmation: passwordForm.value.password_confirmation
+    });
+    isPasswordModalOpen.value = false;
+    passwordForm.value = {
+      current_password: "",
+      password: "",
+      password_confirmation: ""
+    };
+  } catch (error) {
+    // handled
+  }
+};
+
+const submitUpdateProfile = async () => {
+  try {
+    const formData = new FormData();
+    formData.append("name", profileForm.value.name);
+    formData.append("email", profileForm.value.email);
+    if (profileForm.value.avatar) {
+      formData.append("avatar", profileForm.value.avatar);
+    }
+    await updateProfile(formData);
+    isProfileModalOpen.value = false;
+    window.location.reload(); 
+  } catch (error) {
+    // handled
+  }
+};
 </script>
 
 <template>
@@ -44,11 +105,11 @@ const strictlyBudget = ref(true);
       <div class="flex flex-col md:flex-row items-center md:items-start justify-between relative z-10 gap-6">
         <div class="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left">
           <div class="w-[100px] h-[100px] rounded-full border-[5px] border-white dark:border-darkmode-400 shadow-sm overflow-hidden shrink-0 bg-primary/20 transition-transform duration-300 group-hover:scale-[1.03]">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah&backgroundColor=ffdfbf" alt="Sarah Smith" class="w-full h-full object-cover" />
+            <img :src="currentUser?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah&backgroundColor=ffdfbf'" alt="Profile Image" class="w-full h-full object-cover" />
           </div>
           <div class="mt-2 md:mt-2">
-            <h3 class="text-[26px] font-extrabold text-slate-800 dark:text-slate-100">Sarah Smith</h3>
-            <div class="text-slate-500 font-bold text-[13px] mt-1">Bride & Administrator &bull; Member since 2023</div>
+            <h3 class="text-[26px] font-extrabold text-slate-800 dark:text-slate-100">{{ currentUser?.name || 'User' }}</h3>
+            <div class="text-slate-500 font-bold text-[13px] mt-1">{{ currentUser?.list_roles?.join(', ') || 'Member' }}</div>
             <div class="flex items-center justify-center md:justify-start gap-2.5 mt-4">
               <span class="px-3.5 py-1 bg-orange-100 text-orange-600 text-[11px] font-extrabold rounded-full border border-orange-200 shadow-sm">Pro Plan</span>
               <span class="px-3.5 py-1 bg-success/10 text-success text-[11px] font-extrabold rounded-full border border-success/20 shadow-sm">Verified</span>
@@ -57,8 +118,8 @@ const strictlyBudget = ref(true);
         </div>
         
         <div class="flex-shrink-0 mt-3 md:mt-6">
-          <button class="px-6 py-2.5 bg-white/90 dark:bg-darkmode-400 text-slate-700 dark:text-slate-200 font-bold text-[13px] rounded-full shadow-sm hover:bg-white hover:text-primary hover:shadow-md hover:-translate-y-0.5 transition-all border border-slate-200/50">
-            View Public Profile
+          <button @click="isProfileModalOpen = true" class="px-6 py-2.5 bg-white/90 dark:bg-darkmode-400 text-slate-700 dark:text-slate-200 font-bold text-[13px] rounded-full shadow-sm hover:bg-white hover:text-primary hover:shadow-md hover:-translate-y-0.5 transition-all border border-slate-200/50">
+            Edit Profile
           </button>
         </div>
       </div>
@@ -83,27 +144,27 @@ const strictlyBudget = ref(true);
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-7">
             <div>
               <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2">Wedding Name</label>
-              <input type="text" value="Smith-Jones Wedding" class="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 focus:ring-primary focus:border-primary font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md" />
+              <input type="text" readonly :value="projectData?.name || ''" class="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md" />
             </div>
             <div>
               <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2">Date</label>
               <div class="relative group">
-                <input type="text" v-model="weddingDate" class="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 focus:ring-primary focus:border-primary font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md" />
-                <Lucide icon="Calendar" class="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 group-hover:text-primary transition-colors" />
+                <input type="text" readonly :value="projectData?.wedding_date ? formatDate(projectData.wedding_date) : ''" class="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md" />
+                <Lucide icon="Calendar" class="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
               </div>
             </div>
             <div>
-              <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2">Venue Location</label>
+              <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2">Venue Location (City)</label>
               <div class="relative group">
-                <Lucide icon="MapPin" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 group-hover:text-primary transition-colors z-10" />
-                <input type="text" value="Napa Valley, CA" class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 focus:ring-primary focus:border-primary font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md relative" />
+                <Lucide icon="MapPin" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 z-10" />
+                <input type="text" readonly :value="projectData?.city || ''" class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md relative" />
               </div>
             </div>
             <div>
               <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2">Estimated Guest Count</label>
               <div class="relative group">
-                <Lucide icon="Users" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 group-hover:text-primary transition-colors z-10" />
-                <input type="number" value="150" class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 focus:ring-primary focus:border-primary font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md relative" />
+                <Lucide icon="Users" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 z-10" />
+                <input type="text" readonly placeholder="N/A" class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-bold text-[14px] text-slate-400 dark:text-slate-500 transition-all shadow-sm relative" />
               </div>
             </div>
           </div>
@@ -127,33 +188,23 @@ const strictlyBudget = ref(true);
           </div>
           
           <div class="flex flex-col gap-4">
-            <!-- Collab 1 -->
-            <div class="p-4 rounded-xl bg-white/70 dark:bg-darkmode-800 border border-slate-200/60 flex items-center gap-4 hover:shadow-sm hover:border-primary/20 transition-all duration-300 group">
-              <div class="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm">
-                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah&backgroundColor=ffdfbf" alt="Sarah" />
+            <template v-if="projectData?.users && projectData.users.length > 0">
+              <div v-for="user in projectData.users" :key="user.id" class="p-4 rounded-xl bg-white/70 dark:bg-darkmode-800 border border-slate-200/60 flex items-center gap-4 hover:shadow-sm hover:border-primary/20 transition-all duration-300 group">
+                <div class="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm bg-slate-100 dark:bg-darkmode-400 flex items-center justify-center text-slate-400">
+                   <img v-if="user.avatar" :src="user.avatar" :alt="user.name" />
+                   <Lucide v-else icon="User" class="w-6 h-6" />
+                </div>
+                <div class="flex-1">
+                  <div class="font-bold text-[15px] text-slate-800 dark:text-slate-100 group-hover:text-primary transition-colors">{{ user.name }} <span v-if="user.id === currentUser?.id">(You)</span></div>
+                  <div class="text-[13px] font-bold text-slate-500 mt-0.5">{{ user.list_roles?.join(', ') || 'User' }}</div>
+                </div>
+                <div class="shrink-0">
+                  <span class="px-4 py-2 bg-white dark:bg-darkmode-600 shadow-sm border border-slate-200/80 rounded-lg text-[11px] uppercase tracking-wider font-extrabold text-slate-500">{{ user.list_roles?.includes('Owner') ? 'Owner' : 'Member' }}</span>
+                </div>
               </div>
-              <div class="flex-1">
-                <div class="font-bold text-[15px] text-slate-800 dark:text-slate-100 group-hover:text-primary transition-colors">Sarah Smith (You)</div>
-                <div class="text-[13px] font-bold text-slate-500 mt-0.5">Admin &bull; Bride</div>
-              </div>
-              <div class="shrink-0">
-                <span class="px-4 py-2 bg-white dark:bg-darkmode-600 shadow-sm border border-slate-200/80 rounded-lg text-[11px] uppercase tracking-wider font-extrabold text-slate-500">Owner</span>
-              </div>
-            </div>
-            <!-- Collab 2 -->
-            <div class="p-4 rounded-xl bg-white/70 dark:bg-darkmode-800 border border-slate-200/60 flex items-center gap-4 hover:shadow-sm hover:border-primary/20 transition-all duration-300 group cursor-pointer">
-              <div class="w-12 h-12 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm bg-slate-100 dark:bg-darkmode-400 flex items-center justify-center text-slate-400">
-                 <Lucide icon="User" class="w-6 h-6" />
-              </div>
-              <div class="flex-1">
-                <div class="font-bold text-[15px] text-slate-800 dark:text-slate-100 group-hover:text-primary transition-colors">Mike Jones</div>
-                <div class="text-[13px] font-bold text-slate-500 mt-0.5">Editor &bull; Partner</div>
-              </div>
-              <div class="shrink-0">
-                <button class="px-4 py-2 bg-transparent border-0 flex items-center text-[13px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
-                  Editor <Lucide icon="ChevronDown" class="w-3 h-3 ml-2" />
-                </button>
-              </div>
+            </template>
+            <div v-else class="text-center text-slate-500 text-sm font-medium py-4">
+              No collaborators found
             </div>
           </div>
           
@@ -182,8 +233,7 @@ const strictlyBudget = ref(true);
             <div>
               <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2.5">Total Budget Goal</label>
               <div class="relative flex items-center group">
-                <div class="absolute left-4 font-bold text-slate-400 z-10 transition-colors">Rp</div>
-                <input type="text" value="500.000.000" class="w-full pl-12 pr-16 py-3.5 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 focus:ring-primary focus:border-primary font-extrabold text-slate-800 dark:text-slate-100 transition-all text-lg shadow-sm focus:shadow-md relative" />
+                <input type="text" readonly :value="formatCurrency(projectData?.total_budget || 0)" class="w-full px-4 py-3.5 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-extrabold text-slate-800 dark:text-slate-100 transition-all text-lg shadow-sm relative" />
                 <div class="absolute right-2 px-3 py-1.5 bg-white border border-slate-100 rounded-lg text-[11px] font-extrabold text-slate-500 shadow-sm z-10 uppercase tracking-widest">IDR</div>
               </div>
             </div>
@@ -192,18 +242,18 @@ const strictlyBudget = ref(true);
               <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2.5">Monthly Saving Goal</label>
               <div class="relative flex items-center group">
                 <div class="absolute left-4 font-bold text-slate-400 z-10 transition-colors">Rp</div>
-                <input type="text" value="15.000.000" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 focus:ring-primary focus:border-primary font-extrabold text-slate-800 dark:text-slate-100 transition-all text-lg shadow-sm focus:shadow-md relative" />
+                <input type="text" readonly placeholder="N/A" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-extrabold text-slate-400 dark:text-slate-500 transition-all text-lg shadow-sm relative" />
               </div>
-              <div class="text-[12px] font-bold text-slate-500 mt-2.5 leading-relaxed">Recommended: Rp 18.000.000/mo to hit goal.</div>
+              <div class="text-[12px] font-bold text-slate-500 mt-2.5 leading-relaxed">Not available in saved data.</div>
             </div>
             
             <div class="pt-7 mt-2 border-t border-slate-200/60 dark:border-darkmode-400 flex items-center justify-between">
               <div>
                 <div class="font-extrabold text-[14px] text-slate-800 dark:text-slate-100">Strict Budget Mode</div>
-                <div class="text-[12px] font-bold text-slate-500 mt-0.5">Alert when over category limit</div>
+                <div class="text-[12px] font-bold text-slate-500 mt-0.5">Not available in saved data</div>
               </div>
               <FormSwitch class="">
-                <FormSwitch.Input type="checkbox" v-model="strictlyBudget" class="shadow-sm" />
+                <FormSwitch.Input type="checkbox" v-model="strictlyBudget" disabled class="shadow-sm opacity-50" />
               </FormSwitch>
             </div>
           </div>
@@ -214,7 +264,7 @@ const strictlyBudget = ref(true);
           <div class="text-[11px] font-extrabold text-slate-400 uppercase tracking-widest mb-6">Security</div>
           
           <div class="flex flex-col gap-4">
-            <button class="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200/70 bg-white/70 dark:bg-darkmode-800 hover:border-primary/40 hover:bg-white hover:shadow-sm transition-all group">
+            <button @click="isPasswordModalOpen = true" class="w-full flex items-center justify-between p-4 rounded-xl border border-slate-200/70 bg-white/70 dark:bg-darkmode-800 hover:border-primary/40 hover:bg-white hover:shadow-sm transition-all group">
               <div class="flex items-center gap-3.5">
                 <Lucide icon="Lock" class="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
                 <span class="font-bold text-[14px] text-slate-700 group-hover:text-slate-800 dark:text-slate-300 transition-colors">Change Password</span>
@@ -234,19 +284,69 @@ const strictlyBudget = ref(true);
       </div>
     </div>
   </div>
-  
-  <!-- Sticky Footer -->
-  <div class="sticky bottom-0 -mx-6 -mb-6 mt-12 px-8 py-5 bg-white/80 backdrop-blur-lg dark:bg-darkmode-700/80 border-t border-slate-200/80 dark:border-darkmode-400 z-40 flex items-center justify-between shadow-[0_-15px_30px_-15px_rgba(0,0,0,0.1)] transition-all">
-    <div class="text-[13px] font-bold text-slate-500 hidden sm:block">
-      Last saved: <span class="font-extrabold text-slate-800 dark:text-slate-200">Just now</span>
-    </div>
-    <div class="flex items-center gap-3 w-full sm:w-auto">
-      <button class="flex-1 sm:flex-none px-7 py-3 bg-white text-slate-700 font-extrabold text-[13px] rounded-full border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm dark:bg-darkmode-600 dark:text-slate-200 dark:border-darkmode-400">
-        Cancel
-      </button>
-      <button class="flex-1 sm:flex-none px-8 py-3 bg-primary text-white font-extrabold text-[13px] rounded-full shadow-md shadow-primary/20 hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 transition-all">
-        Save Changes
-      </button>
-    </div>
-  </div>
+
+  <!-- Update Profile Modal -->
+  <Dialog :open="isProfileModalOpen" @close="isProfileModalOpen = false">
+    <Dialog.Panel>
+      <Dialog.Title>
+        <h2 class="mr-auto text-base font-medium">Edit Profile</h2>
+      </Dialog.Title>
+      <Dialog.Description class="grid grid-cols-12 gap-4 gap-y-3">
+        <div class="col-span-12 sm:col-span-12">
+          <FormLabel htmlFor="modal-name">Name</FormLabel>
+          <FormInput id="modal-name" type="text" v-model="profileForm.name" />
+        </div>
+        <div class="col-span-12 sm:col-span-12">
+          <FormLabel htmlFor="modal-email">Email</FormLabel>
+          <FormInput id="modal-email" type="email" v-model="profileForm.email" />
+        </div>
+        <div class="col-span-12 sm:col-span-12">
+          <FormLabel htmlFor="modal-avatar">Avatar</FormLabel>
+          <FormInput id="modal-avatar" type="file" accept="image/*" @change="handleAvatarChange" />
+          <div v-if="avatarPreview" class="mt-2 w-16 h-16 rounded-full overflow-hidden border">
+            <img :src="avatarPreview" alt="Preview" class="w-full h-full object-cover" />
+          </div>
+        </div>
+      </Dialog.Description>
+      <div class="px-5 py-3 text-right border-t border-slate-200/60 dark:border-darkmode-400 mt-4">
+        <Button type="button" variant="outline-secondary" @click="isProfileModalOpen = false" class="w-24 mr-1">
+          Cancel
+        </Button>
+        <Button type="button" variant="primary" class="w-24" @click="submitUpdateProfile">
+          Update
+        </Button>
+      </div>
+    </Dialog.Panel>
+  </Dialog>
+
+  <!-- Change Password Modal -->
+  <Dialog :open="isPasswordModalOpen" @close="isPasswordModalOpen = false">
+    <Dialog.Panel>
+      <Dialog.Title>
+        <h2 class="mr-auto text-base font-medium">Change Password</h2>
+      </Dialog.Title>
+      <Dialog.Description class="grid grid-cols-12 gap-4 gap-y-3">
+        <div class="col-span-12 sm:col-span-12">
+          <FormLabel htmlFor="modal-current-password">Current Password</FormLabel>
+          <FormInput id="modal-current-password" type="password" v-model="passwordForm.current_password" />
+        </div>
+        <div class="col-span-12 sm:col-span-12">
+          <FormLabel htmlFor="modal-new-password">New Password</FormLabel>
+          <FormInput id="modal-new-password" type="password" v-model="passwordForm.password" />
+        </div>
+        <div class="col-span-12 sm:col-span-12">
+          <FormLabel htmlFor="modal-confirm-password">Confirm Password</FormLabel>
+          <FormInput id="modal-confirm-password" type="password" v-model="passwordForm.password_confirmation" />
+        </div>
+      </Dialog.Description>
+      <div class="px-5 py-3 text-right border-t border-slate-200/60 dark:border-darkmode-400 mt-4">
+        <Button type="button" variant="outline-secondary" @click="isPasswordModalOpen = false" class="w-24 mr-1">
+          Cancel
+        </Button>
+        <Button type="button" variant="primary" class="w-24" @click="submitUpdatePassword">
+          Save
+        </Button>
+      </div>
+    </Dialog.Panel>
+  </Dialog>
 </template>
