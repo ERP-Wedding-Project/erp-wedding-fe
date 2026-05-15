@@ -2,9 +2,18 @@
 import { ref } from "vue";
 import Lucide from "@/components/Base/Lucide";
 import { FormSwitch } from "@/components/Base/Form";
+import {refreshActiveProject} from "@/core/helpers/utils.ts";
+import useProfileApi from "@/api/client/ProfileApi.ts";
+
+
+refreshActiveProject()
+
+const {profile, updateProfile, updatePassword} = useProfileApi()
 
 const weddingDate = ref("09 / 15 / 2024");
 const strictlyBudget = ref(true);
+
+
 </script>
 
 <template>
