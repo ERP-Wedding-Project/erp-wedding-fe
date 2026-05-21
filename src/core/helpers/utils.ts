@@ -1,3 +1,5 @@
+import moment from "moment";
+
 export const formatCurrency = (value: number | string) => {
   const num = typeof value === "string" ? parseFloat(value) : value;
   if (isNaN(num)) return "Rp 0";
@@ -14,6 +16,26 @@ export const formatDate = (date: string, format: string = "D MMM, YYYY") => {
   // Assuming dayjs is available globally or we import it where needed
   return date;
 };
+
+export function formattedDate(date: any) {
+  /* ex: 30 June 2023 */
+  return moment(date).format("DD MMMM YYYY");
+}
+
+export function formattedDate2(date: any) {
+  /* ex: 30-07-2023 */
+  return moment(date).format("YYYY-MM-DD");
+}
+
+export function formattedDate3(date: any) {
+  /* ex: 07-2023 */
+  return moment(date).format('MM YYYY')
+}
+
+export function formattedDate4(date: any) {
+  /* ex: 30 JuNe 2023 12:00:00 */
+  return moment(date).format("DD MMMM YYYY HH:mm:ss");
+}
 
 export const allowOnlyNumbers = (event: KeyboardEvent) => {
   const charCode = event.which ? event.which : event.keyCode;
