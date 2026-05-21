@@ -27,6 +27,11 @@ const menu: Array<Menu | "divider"> = [
     pageName: "profile-client",
     title: "Profile",
   },
+  {
+    icon: "Users",
+    pageName: "collaborator-client",
+    title: "Collaborator",
+  },
 ];
 
 export default menu;
