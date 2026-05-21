@@ -1,30 +1,49 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import Lucide from "@/components/Base/Lucide";
-import { FormSwitch, FormInput, FormLabel } from "@/components/Base/Form";
+import { FormInput, FormLabel } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
-import { refreshActiveProject, getActiveProject, formatCurrency, formatDate } from "@/core/helpers/utils";
+import { getActiveProject, formatCurrency, formattedDate } from "@/core/helpers/utils";
 import useProfileApi from "@/api/client/ProfileApi";
+import useProjectApi from "@/api/client/ProjectApi";
 import { useAuthStore } from "@/stores/auth";
 
-// refreshActiveProject();
 const projectData = ref<any>(getActiveProject());
 
 const authStore = useAuthStore();
-const currentUser = ref(authStore.getUser());
+const currentUser = ref<any>(authStore.getUser());
 
 const { updateProfile, updatePassword } = useProfileApi();
+const { inviteCollaborator, getDetailProject } = useProjectApi();
 
-const strictlyBudget = ref(true);
-
-// Modals state
 const isPasswordModalOpen = ref(false);
 const passwordForm = ref({
   current_password: "",
   password: "",
   password_confirmation: ""
 });
+
+const isInviteModalOpen = ref(false);
+const inviteForm = ref({
+  email: ""
+});
+
+const submitInvite = async () => {
+  if (!projectData.value?.code) return;
+  try {
+    await inviteCollaborator(projectData.value.code, { email: inviteForm.value.email });
+    isInviteModalOpen.value = false;
+    inviteForm.value.email = "";
+    const response = await getDetailProject(projectData.value.code);
+    const freshProject = response?.payload?.data;
+    if (freshProject) {
+      projectData.value = freshProject;
+      localStorage.setItem("activeProject", JSON.stringify(freshProject));
+    }
+  } catch (error) {
+  }
+};
 
 const isProfileModalOpen = ref(false);
 const profileForm = ref({
@@ -149,7 +168,7 @@ const submitUpdateProfile = async () => {
             <div>
               <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2">Date</label>
               <div class="relative group">
-                <input type="text" readonly :value="projectData?.wedding_date ? formatDate(projectData.wedding_date) : ''" class="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md" />
+                <input type="text" readonly :value="projectData?.wedding_date ? formattedDate(projectData.wedding_date) : ''" class="w-full px-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md" />
                 <Lucide icon="Calendar" class="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2" />
               </div>
             </div>
@@ -160,13 +179,13 @@ const submitUpdateProfile = async () => {
                 <input type="text" readonly :value="projectData?.city || ''" class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-bold text-[14px] text-slate-800 dark:text-slate-200 transition-all shadow-sm focus:shadow-md relative" />
               </div>
             </div>
-            <div>
+            <!-- <div>
               <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2">Estimated Guest Count</label>
               <div class="relative group">
                 <Lucide icon="Users" class="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 z-10" />
                 <input type="text" readonly placeholder="N/A" class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-bold text-[14px] text-slate-400 dark:text-slate-500 transition-all shadow-sm relative" />
               </div>
-            </div>
+            </div> -->
           </div>
         </div>
         
@@ -182,7 +201,7 @@ const submitUpdateProfile = async () => {
                 <div class="text-[13px] font-bold text-slate-500 mt-1">Manage who can access your wedding plan</div>
               </div>
             </div>
-            <button class="text-[13px] font-bold text-primary hover:text-primary/80 transition-all bg-primary/10 hover:bg-primary/20 px-4 py-2.5 rounded-xl whitespace-nowrap hidden sm:flex items-center">
+            <button @click="isInviteModalOpen = true" class="text-[13px] font-bold text-primary hover:text-primary/80 transition-all bg-primary/10 hover:bg-primary/20 px-4 py-2.5 rounded-xl whitespace-nowrap hidden sm:flex items-center">
               <Lucide icon="Plus" class="w-4 h-4 mr-1.5" /> Invite New
             </button>
           </div>
@@ -209,7 +228,7 @@ const submitUpdateProfile = async () => {
           </div>
           
           <!-- Mobile invite button -->
-          <button class="w-full mt-6 text-[13px] font-extrabold text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors bg-primary/5 shadow-sm px-4 py-3.5 rounded-xl sm:hidden flex items-center justify-center border border-primary/20">
+          <button @click="isInviteModalOpen = true" class="w-full mt-6 text-[13px] font-extrabold text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors bg-primary/5 shadow-sm px-4 py-3.5 rounded-xl sm:hidden flex items-center justify-center border border-primary/20">
             <Lucide icon="Plus" class="w-4 h-4 mr-1.5" /> Invite New Collaborator
           </button>
         </div>
@@ -236,25 +255,6 @@ const submitUpdateProfile = async () => {
                 <input type="text" readonly :value="formatCurrency(projectData?.total_budget || 0)" class="w-full px-4 py-3.5 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-extrabold text-slate-800 dark:text-slate-100 transition-all text-lg shadow-sm relative" />
                 <div class="absolute right-2 px-3 py-1.5 bg-white border border-slate-100 rounded-lg text-[11px] font-extrabold text-slate-500 shadow-sm z-10 uppercase tracking-widest">IDR</div>
               </div>
-            </div>
-            
-            <div>
-              <label class="block text-[13px] font-bold text-slate-800 dark:text-slate-300 mb-2.5">Monthly Saving Goal</label>
-              <div class="relative flex items-center group">
-                <div class="absolute left-4 font-bold text-slate-400 z-10 transition-colors">Rp</div>
-                <input type="text" readonly placeholder="N/A" class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200/80 bg-white/70 dark:bg-darkmode-800 font-extrabold text-slate-400 dark:text-slate-500 transition-all text-lg shadow-sm relative" />
-              </div>
-              <div class="text-[12px] font-bold text-slate-500 mt-2.5 leading-relaxed">Not available in saved data.</div>
-            </div>
-            
-            <div class="pt-7 mt-2 border-t border-slate-200/60 dark:border-darkmode-400 flex items-center justify-between">
-              <div>
-                <div class="font-extrabold text-[14px] text-slate-800 dark:text-slate-100">Strict Budget Mode</div>
-                <div class="text-[12px] font-bold text-slate-500 mt-0.5">Not available in saved data</div>
-              </div>
-              <FormSwitch class="">
-                <FormSwitch.Input type="checkbox" v-model="strictlyBudget" disabled class="shadow-sm opacity-50" />
-              </FormSwitch>
             </div>
           </div>
         </div>
@@ -345,6 +345,29 @@ const submitUpdateProfile = async () => {
         </Button>
         <Button type="button" variant="primary" class="w-24" @click="submitUpdatePassword">
           Save
+        </Button>
+      </div>
+    </Dialog.Panel>
+  </Dialog>
+
+  <!-- Invite Collaborator Modal -->
+  <Dialog :open="isInviteModalOpen" @close="isInviteModalOpen = false">
+    <Dialog.Panel>
+      <Dialog.Title>
+        <h2 class="mr-auto text-base font-medium">Invite Collaborator</h2>
+      </Dialog.Title>
+      <Dialog.Description class="grid grid-cols-12 gap-4 gap-y-3">
+        <div class="col-span-12 sm:col-span-12">
+          <FormLabel htmlFor="modal-invite-email">Partner Email</FormLabel>
+          <FormInput id="modal-invite-email" type="email" v-model="inviteForm.email" placeholder="partner@example.com" />
+        </div>
+      </Dialog.Description>
+      <div class="px-5 py-3 text-right border-t border-slate-200/60 dark:border-darkmode-400 mt-4">
+        <Button type="button" variant="outline-secondary" @click="isInviteModalOpen = false" class="w-24 mr-1">
+          Cancel
+        </Button>
+        <Button type="button" variant="primary" class="w-24" @click="submitInvite">
+          Send
         </Button>
       </div>
     </Dialog.Panel>
