@@ -5,6 +5,7 @@ import type {
   ResponseSingleData,
   ResponseData,
   ResponseError,
+  ResponseDataCollectionWithPagination,
 } from "@/types/response";
 import HandlerService from "@/core/services/HandlerService";
 import { ref } from "vue";
@@ -64,10 +65,45 @@ export default function useProjectApi() {
     }
   }
 
+  const getListInvitations = async () => {
+    try {
+      loadingBlock();
+      const response = await ApiService.get<
+        ResponseDataCollectionWithPagination<any>
+      >("invitations");
+
+      return response.data;
+    } catch (e: any) {
+      await HandlerService.responseError(e, responseError);
+      throw new Error(e);
+    } finally {
+      loadingUnBlock();
+    }
+  };
+
+  const resendInvitation = async (code: string, invitation_id: string) => {
+    try {
+      loadingBlock();
+      const response = await ApiService.post<any, ResponseData>(
+        `projects/${code}/invitations/${invitation_id}/resend`,
+        {}
+      );
+      await HandlerService.responseSuccess(response);
+      return response.data;
+    } catch (e: any) {
+      await HandlerService.responseError(e, responseError);
+      throw e;
+    } finally {
+      loadingUnBlock();
+    }
+  };
+
   return {
     getListProject,
     getDetailProject,
     inviteCollaborator,
+    getListInvitations,
+    resendInvitation,
     // responseError,
   };
 }

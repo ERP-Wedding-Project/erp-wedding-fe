@@ -18,22 +18,22 @@ export const formatDate = (date: string, format: string = "D MMM, YYYY") => {
 };
 
 export function formattedDate(date: any) {
-  /* ex: 30 June 2023 */
+  /* ex: 30 June 2026 */
   return moment(date).format("DD MMMM YYYY");
 }
 
 export function formattedDate2(date: any) {
-  /* ex: 30-07-2023 */
+  /* ex: 30-07-2026 */
   return moment(date).format("YYYY-MM-DD");
 }
 
 export function formattedDate3(date: any) {
-  /* ex: 07-2023 */
+  /* ex: 07-2026 */
   return moment(date).format('MM YYYY')
 }
 
 export function formattedDate4(date: any) {
-  /* ex: 30 JuNe 2023 12:00:00 */
+  /* ex: 30 June 2026 12:00:00 */
   return moment(date).format("DD MMMM YYYY HH:mm:ss");
 }
 

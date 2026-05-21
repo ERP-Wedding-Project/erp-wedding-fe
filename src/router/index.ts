@@ -40,6 +40,11 @@ const router = createRouter({
           name: "profile-client",
           component: () => import("../views/client/Profile.vue"),
         },
+        {
+          path: "/collaborator",
+          name: "collaborator-client",
+          component: () => import("../views/client/Collaborator.vue"),
+        },
         // This is demo route, delete later
         ...demoRoute,
       ],
@@ -151,7 +156,7 @@ router.beforeEach(async (to, from, next) => {
         if (user.email_verified_at == null && to.name !== "verify-email" && to.name !== "login" && to.name !== "logout") {
           return next({ name: "verify-email" });
         }
-        
+
         if (user.email_verified_at != null) {
           if (!user.complete_onboarding && to.name !== "onboarding" && to.name !== "login" && to.name !== "logout") {
             return next({ name: "onboarding" });
