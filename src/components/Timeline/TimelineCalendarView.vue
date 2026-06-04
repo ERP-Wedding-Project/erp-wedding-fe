@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import Lucide from "@/components/Base/Lucide";
+import Tippy from "@/components/Base/Tippy";
 import type ITask from "@/types/entities/Task";
 
 interface Props {
@@ -272,7 +273,9 @@ const getStatusIcon = (status: string) => {
                 :class="getPriorityColor(task.rawTask.priority)"
               ></div>
               <div class="flex-1 min-w-0">
-                <div
+                <Tippy
+                  as="div"
+                  :content="task.title"
                   class="text-xs font-medium truncate"
                   :class="{
                     'text-slate-400 line-through': task.completed,
@@ -281,7 +284,7 @@ const getStatusIcon = (status: string) => {
                   }"
                 >
                   {{ task.title }}
-                </div>
+                </Tippy>
                 <div class="flex items-center gap-1 mt-0.5">
                   <Lucide
                     :icon="getStatusIcon(task.rawTask.status)"

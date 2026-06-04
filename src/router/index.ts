@@ -40,23 +40,25 @@ const router = createRouter({
           name: "profile-client",
           component: () => import("../views/client/Profile.vue"),
         },
+        {
+          path: "/onboarding",
+          name: "onboarding",
+          component: () => import("../views/client/Onboarding.vue"),
+        },
         // This is demo route, delete later
         ...demoRoute,
       ],
     },
     {
-      path: "/onboarding",
-      name: "onboarding",
-      component: () => import("../views/client/Onboarding.vue"),
-    },
-    {
       path: "/login",
       name: "login",
+      meta: { guestOnly: true },
       component: () => import("../views/auth/Login.vue"),
     },
     {
       path: "/register",
       name: "register",
+      meta: { guestOnly: true },
       component: () => import("../views/auth/Register.vue"),
     },
     {
@@ -67,11 +69,13 @@ const router = createRouter({
     {
       path: "/forgot-password",
       name: "forgot-password",
+      meta: { guestOnly: true },
       component: () => import("../views/auth/ForgotPassword.vue"),
     },
     {
       path: "/reset-password/:token?",
       name: "reset-password",
+      meta: { guestOnly: true },
       component: () => import("../views/auth/ResetPassword.vue"),
     },
     {
@@ -147,13 +151,26 @@ router.beforeEach(async (to, from, next) => {
     if (userString) {
       const user = JSON.parse(userString);
       const roles = getRoles();
-      if (roles.includes("User") || (user.list_roles && user.list_roles.includes("User"))) {
-        if (user.email_verified_at == null && to.name !== "verify-email" && to.name !== "login" && to.name !== "logout") {
+      if (
+        roles.includes("User") ||
+        (user.list_roles && user.list_roles.includes("User"))
+      ) {
+        if (
+          user.email_verified_at == null &&
+          to.name !== "verify-email" &&
+          to.name !== "login" &&
+          to.name !== "logout"
+        ) {
           return next({ name: "verify-email" });
         }
-        
+
         if (user.email_verified_at != null) {
-          if (!user.complete_onboarding && to.name !== "onboarding" && to.name !== "login" && to.name !== "logout") {
+          if (
+            !user.complete_onboarding &&
+            to.name !== "onboarding" &&
+            to.name !== "login" &&
+            to.name !== "logout"
+          ) {
             return next({ name: "onboarding" });
           }
           if (user.complete_onboarding && to.name === "onboarding") {

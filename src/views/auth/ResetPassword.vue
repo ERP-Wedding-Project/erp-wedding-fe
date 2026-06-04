@@ -24,6 +24,7 @@ const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const isSubmitted = ref(false);
 const errorMessage = ref("");
+const isLoading = ref(false);
 
 onMounted(() => {
   const email = decodeURIComponent(route.query.email as string);
@@ -51,11 +52,15 @@ const onSubmitResetPassword = async () => {
   }
 
   try {
+    if (isLoading.value) return;
+    isLoading.value = true;
+
     await resetPassword(resetData.value);
     isSubmitted.value = true;
   } catch (error: any) {
-    errorMessage.value =
-      error.message || "Failed to reset password. Please try again.";
+    errorMessage.value = "Failed to reset password. Please try again.";
+  } finally {
+    isLoading.value = false;
   }
 };
 </script>
@@ -253,9 +258,14 @@ const onSubmitResetPassword = async () => {
           <Button
             type="submit"
             variant="primary"
+            :disabled="isLoading"
             class="w-full py-3.5 rounded-xl bg-primary hover:opacity-90 active:bg-theme-2 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md hover:shadow-lg border-none mt-4"
           >
-            Reset Password
+            <span v-if="isLoading" class="flex items-center gap-2">
+              <Lucide icon="Loader" class="w-4 h-4 animate-spin" />
+              Resetting...
+            </span>
+            <span v-else>Reset Password</span>
           </Button>
 
           <!-- Back to login Link -->
