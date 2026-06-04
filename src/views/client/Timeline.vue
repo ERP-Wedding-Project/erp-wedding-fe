@@ -3,10 +3,14 @@ import { ref, onMounted, computed, watch } from "vue";
 import Lucide from "@/components/Base/Lucide";
 import AddTaskModal from "@/components/Timeline/AddTaskModal.vue";
 import TaskDetailModal from "@/components/Timeline/TaskDetailModal.vue";
+import TimelineCalendarView from "@/components/Timeline/TimelineCalendarView.vue";
 import TomSelect from "@/components/Base/TomSelect";
 import useProjectApi from "@/api/client/ProjectApi";
 import useTaskApi from "@/api/client/TaskApi";
 import type ITask from "@/types/entities/Task";
+
+// View Mode
+const viewMode = ref<"timeline" | "calendar">("timeline");
 
 // Modal
 const isAddTaskModalOpen = ref(false);
@@ -62,6 +66,14 @@ const phases = ref<
 >([]);
 
 const plainTasks = ref<any[]>([]);
+
+// All tasks for calendar view
+const allTasks = computed(() => {
+  if (isFilteredOrSorted.value) {
+    return plainTasks.value;
+  }
+  return phases.value.flatMap((phase) => phase.tasks);
+});
 
 // Watch filters to re-fetch
 watch([filterStatus, filterPriority, sortBy], () => {
@@ -294,9 +306,38 @@ const closeTaskDetailModal = () => {
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-3 mt-4 sm:mt-0">
+        <!-- View Toggle -->
+        <div
+          class="inline-flex rounded-lg border border-slate-200 dark:border-darkmode-400 p-1 bg-slate-50 dark:bg-darkmode-600"
+        >
+          <button
+            @click="viewMode = 'timeline'"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2"
+            :class="
+              viewMode === 'timeline'
+                ? 'bg-white dark:bg-darkmode-400 text-primary shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            "
+          >
+            <Lucide icon="List" class="w-4 h-4" />
+            Timeline
+          </button>
+          <button
+            @click="viewMode = 'calendar'"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-all flex items-center gap-2"
+            :class="
+              viewMode === 'calendar'
+                ? 'bg-white dark:bg-darkmode-400 text-primary shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            "
+          >
+            <Lucide icon="Calendar" class="w-4 h-4" />
+            Calendar
+          </button>
+        </div>
         <button
           @click="openAddTaskModal"
-          class="ml-2 px-5 py-2.5 bg-primary text-white font-medium rounded-full shadow-md hover:bg-primary/90 hover:shadow-lg transition-all flex items-center"
+          class="px-5 py-2.5 bg-primary text-white font-medium rounded-full shadow-md hover:bg-primary/90 hover:shadow-lg transition-all flex items-center"
         >
           <Lucide icon="Plus" class="w-4 h-4 mr-2" /> Add Task
         </button>
@@ -411,8 +452,17 @@ const closeTaskDetailModal = () => {
         </TomSelect>
       </div>
     </div>
+    <!-- Calendar View -->
+    <div v-if="viewMode === 'calendar'" class="mt-4">
+      <TimelineCalendarView
+        :tasks="allTasks"
+        :wedding-date="activeWeddingDate"
+        @task-click="toggleTask"
+      />
+    </div>
+
     <!-- Timeline Phases / Plain List -->
-    <div class="mt-4">
+    <div v-else class="mt-4">
       <!-- Plain List (Filter/Sort Active) -->
       <div v-if="isFilteredOrSorted" class="flex flex-col gap-4">
         <div
@@ -521,7 +571,9 @@ const closeTaskDetailModal = () => {
             <div
               class="flex items-center justify-center w-8 h-8 rounded-md bg-white dark:bg-darkmode-600 shadow-sm text-slate-600 dark:text-white mr-4 border border-slate-200 dark:border-darkmode-400"
             >
-              <span class="font-bold text-sm">{{ phase.id }}</span>
+              <span class="font-bold text-sm">
+                <Lucide icon="Gem" class="w-4 h-4 text-wedding-primary"
+              /></span>
             </div>
             <h3
               class="text-xl font-bold text-slate-800 dark:text-slate-200 mr-4 group-hover:text-primary transition-colors"

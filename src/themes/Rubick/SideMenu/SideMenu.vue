@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import "@/assets/css/themes/rubick/side-nav.css";
 import { useRoute, useRouter } from "vue-router";
-import logoUrl from "@/assets/images/logo.svg";
+import logoUrl from "@/assets/images/wedhub-icon.png";
 import Tippy from "@/components/Base/Tippy";
 import Lucide from "@/components/Base/Lucide";
 import TopBar from "@/components/Themes/Rubick/TopBar";
@@ -31,6 +31,7 @@ const setFormattedMenu = (
 const menuStore = useMenuStore();
 const menu = computed(() => nestedMenu(menuStore.menu("side-menu"), route));
 const windowWidth = ref(window.innerWidth);
+const appName = import.meta.env.VITE_APP_NAME;
 
 provide<ProvideForceActiveMenu>("forceActiveMenu", (pageName: string) => {
   forceActiveMenu(route, pageName);
@@ -79,7 +80,9 @@ onMounted(() => {
             class="w-6"
             :src="logoUrl"
           />
-          <span class="hidden ml-3 text-lg text-white xl:block"> Rubick </span>
+          <span class="hidden ml-3 text-lg text-white xl:block">
+            {{ appName }}
+          </span>
         </RouterLink>
         <div class="px-5 mt-6 hidden xl:block">
           <ProjectSwitcher />

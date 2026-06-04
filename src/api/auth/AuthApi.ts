@@ -49,30 +49,31 @@ export default function useAuthApi() {
       console.log(toRaw(user.value), "user");
 
       // user.value.access_token = response.data.payload.access_token;
-      if (user.value.email_verified_at == null) {
-        console.log("email not verified");
 
-        await router.push({ name: "verify-email" });
-      } else {
-        console.log("email verified");
+      console.log("email verified");
 
-        if (user.value) {
-          setAuthenticated(user.value);
-          const roles = user.value.list_roles || [];
-          const rolePriority = ["User"];
-          const destinationMap: Record<string, string> = {
-            User: "dashboard-client",
-          };
+      if (user.value) {
+        setAuthenticated(user.value);
+        const roles = user.value.list_roles || [];
+        const rolePriority = ["User"];
+        const destinationMap: Record<string, string> = {
+          User: "dashboard-client",
+        };
 
-          const matchedRole = rolePriority.find((role) => roles.includes(role));
-          const destinationRoute =
-            destinationMap[matchedRole ?? ""] || "dashboard-client";
+        if (user.value.email_verified_at == null) {
+          console.log("email not verified");
 
-          if (user.value.complete_onboarding) {
-            await router.push({ name: destinationRoute });
-          } else {
-            await router.push({ name: "onboarding" });
-          }
+          await router.push({ name: "verify-email" });
+        }
+
+        const matchedRole = rolePriority.find((role) => roles.includes(role));
+        const destinationRoute =
+          destinationMap[matchedRole ?? ""] || "dashboard-client";
+
+        if (user.value.complete_onboarding) {
+          await router.push({ name: destinationRoute });
+        } else {
+          await router.push({ name: "onboarding" });
         }
       }
       await HandlerService.responseSuccess(response);
