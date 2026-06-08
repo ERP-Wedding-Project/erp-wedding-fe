@@ -57,6 +57,8 @@ export default function useProjectApi() {
     } catch (e: any) {
       await HandlerService.responseError(e, responseError);
       throw new Error(e);
+    }
+  }
   const inviteCollaborator = async (code: string, request: IFormInviteCollaborator) => {
     try {
       loadingBlock();
