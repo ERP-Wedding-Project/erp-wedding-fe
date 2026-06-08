@@ -45,6 +45,11 @@ const router = createRouter({
           name: "onboarding",
           component: () => import("../views/client/Onboarding.vue"),
         },
+        {
+          path: "/collaborator",
+          name: "collaborator-client",
+          component: () => import("../views/client/Collaborator.vue"),
+        },
         // This is demo route, delete later
         ...demoRoute,
       ],
