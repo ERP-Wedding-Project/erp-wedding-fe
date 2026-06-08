@@ -7,6 +7,18 @@ import { toast } from "vue3-toastify";
 import HandlerService from "@/core/services/HandlerService";
 import { useAuthStore } from "@/stores/auth";
 
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null): void => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    error ? reject(error) : resolve(token!);
+  });
+  failedQueue = [];
+};
 export default class ApiService {
   public static vueInstance: App;
 
@@ -46,8 +58,6 @@ export default class ApiService {
     data?: Request,
     config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<Response>> {
-    console.log(data, "data");
-
     return ApiService.vueInstance.axios.post(url, data, config);
   }
 
@@ -83,7 +93,7 @@ export default class ApiService {
         }
       },
       async (error) => {
-        console.log("err", error);
+        console.log("err", error.response);
 
         if (!error.response) {
           toast.error(
@@ -91,16 +101,72 @@ export default class ApiService {
             { dangerouslyHTMLString: true },
           );
           return Promise.reject(error);
-        } else if (error.response.status == 401) {
-          // const {setUnauthenticated} = useAuthStore();
-          // setUnauthenticated()
-          toast.error(
-            `<h1 style="font-weight: bold">${error.response.data.code}</h1><span>${error.response.data.message}</span>`,
-            {
-              dangerouslyHTMLString: true,
-            },
-          );
-          await router.push({ name: "login" });
+        } else if (error.response.status === 401) {
+          const originalRequest = error.config;
+          console.log("originalRequest", originalRequest);
+
+          // Kalau 401 ketika login, berarti user belum ada atau credential salah
+
+          if (originalRequest.url?.includes("login")) {
+            return toast.error(error.response.data.message);
+          }
+
+          // Kalau refresh request itu sendiri yang 401 → jangan loop
+          if (originalRequest.url?.includes("/auth/refresh")) {
+            const { setUnauthenticated } = useAuthStore();
+            setUnauthenticated();
+            return Promise.reject(error);
+          }
+
+          if (originalRequest._retry) {
+            // Sudah dicoba refresh tapi masih 401 → logout
+            const { setUnauthenticated } = useAuthStore();
+            setUnauthenticated();
+            return Promise.reject(error);
+          }
+
+          if (isRefreshing) {
+            // Refresh sedang berjalan → queue request ini, tunggu token baru
+            return new Promise((resolve, reject) => {
+              failedQueue.push({ resolve, reject });
+            }).then((token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              return ApiService.vueInstance.axios(originalRequest);
+            });
+          }
+
+          originalRequest._retry = true;
+          isRefreshing = true;
+
+          try {
+            const { data } = await axios.post(
+              `${import.meta.env.VITE_APP_API_URL}/token/refresh`,
+              {},
+              { withCredentials: true },
+            );
+
+            const newToken: string = data.access_token;
+
+            // Simpan token baru
+            localStorage.setItem("access_token", newToken);
+            ApiService.vueInstance.axios.defaults.headers.common[
+              "Authorization"
+            ] = `Bearer ${newToken}`;
+
+            // Selesaikan semua request yang tertahan
+            processQueue(null, newToken);
+
+            // Retry request original dengan token baru
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return ApiService.vueInstance.axios(originalRequest);
+          } catch (refreshError) {
+            processQueue(refreshError, null);
+            const { setUnauthenticated } = useAuthStore();
+            setUnauthenticated(); // clear localStorage + redirect /login
+            return Promise.reject(refreshError);
+          } finally {
+            isRefreshing = false;
+          }
         } else if (error.response.status == 404) {
           toast.error(
             "DATA NOT FOUND, THIS TOASTER IS TEMPORARY FOR DEVELOPMENT PURPOSE",
