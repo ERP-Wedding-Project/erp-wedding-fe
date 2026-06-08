@@ -16,9 +16,10 @@ export default interface ITask {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  last_edited_at?: string;
+  last_edited_by?: string;
   task_category?: ITaskCategory;
   assignees?: IUser[];
   project?: IProject;
   expense?: IExpense;
 }
-

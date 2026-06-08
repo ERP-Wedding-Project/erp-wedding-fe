@@ -10,13 +10,20 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
 
 const email = ref("");
 const isSubmitted = ref(false);
-
+const isLoading = ref(false);
 const { forgotPassword } = useAuthApi();
 
 const onSubmitForgotPassword = async () => {
-  if (!email.value) return;
-  await forgotPassword(email.value);
-  isSubmitted.value = true;
+  try {
+    if (isLoading.value) return;
+    isLoading.value = true;
+
+    if (!email.value) return;
+    await forgotPassword(email.value);
+    isSubmitted.value = true;
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -147,9 +154,17 @@ const onSubmitForgotPassword = async () => {
           <Button
             type="submit"
             variant="primary"
+            :disabled="isLoading"
             class="w-full py-3.5 rounded-xl bg-primary hover:opacity-90 active:bg-theme-2 text-white font-semibold text-sm tracking-wide transition-all duration-200 shadow-md hover:shadow-lg border-none mt-2"
           >
-            Send Reset Link
+            <span
+              v-if="isLoading"
+              class="flex items-center justify-center gap-2"
+            >
+              <Lucide icon="Loader" class="w-4 h-4 animate-spin" />
+              Sending reset link...
+            </span>
+            <span v-else>Send Reset Link</span>
           </Button>
 
           <!-- Back to login Link -->

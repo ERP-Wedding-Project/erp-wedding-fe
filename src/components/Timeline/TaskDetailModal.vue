@@ -10,6 +10,9 @@ import useTaskCategoryApi from "@/api/client/TaskCategoryApi";
 import useEnumsOptionApi from "@/api/client/EnumsOptionApi";
 import type ITask from "@/types/entities/Task";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 const props = defineProps<{
   open: boolean;
@@ -33,6 +36,7 @@ const isLoading = ref(false);
 const taskDetail = ref<ITask | null>(null);
 const isDeleteConfirmOpen = ref(false);
 const isEditing = ref(false);
+const isEdited = ref(false);
 
 const taskCategories = ref<any[]>([]);
 const taskPriorities = ref<any[]>([]);
@@ -84,15 +88,26 @@ watch(
         isLoading.value = true;
         const res = await getTaskDetail(props.projectCode, props.task.id);
         taskDetail.value = res?.payload?.data || null;
-          
+        console.log(taskDetail);
+
         if (taskDetail.value) {
           form.title = taskDetail.value.title;
           form.description = taskDetail.value.description;
           form.status = taskDetail.value.status;
           form.priority = taskDetail.value.priority;
-          form.due_date = taskDetail.value.due_date ? dayjs(taskDetail.value.due_date).format("D MMM, YYYY") : "";
-          form.assignee_ids = taskDetail.value.assignees ? taskDetail.value.assignees.map((u:any)=>u.id) : [];
-          form.task_category_id = taskDetail.value.task_category ? taskDetail.value.task_category.id : null;
+          form.due_date = taskDetail.value.due_date
+            ? dayjs(taskDetail.value.due_date).format("D MMM, YYYY")
+            : "";
+          form.assignee_ids = taskDetail.value.assignees
+            ? taskDetail.value.assignees.map((u: any) => u.id)
+            : [];
+          form.task_category_id = taskDetail.value.task_category
+            ? taskDetail.value.task_category.id
+            : null;
+
+          if (taskDetail.value.last_edited_at !== null) {
+            isEdited.value = true;
+          }
         }
       } catch (e) {
         console.error(e);
@@ -139,7 +154,7 @@ const saveChanges = async () => {
     });
     emit("success");
     isEditing.value = false;
-    
+
     // refetch data
     const res = await getTaskDetail(props.projectCode, props.task.id);
     taskDetail.value = res?.payload?.data || null;
@@ -182,7 +197,7 @@ const handleDelete = async () => {
       <div v-else-if="taskDetail">
         <!-- Header -->
         <div
-          class="px-6 py-5 bg-gradient-to-r from-[#faf6f3] to-white rounded-t-lg border-b border-slate-100 flex items-center justify-between"
+          class="px-6 py-6 bg-gradient-to-r from-[#faf6f3] to-white rounded-t-lg border-b border-slate-100 flex items-center justify-between"
         >
           <div class="flex flex-1 items-center gap-3 pr-4">
             <div
@@ -190,10 +205,25 @@ const handleDelete = async () => {
             >
               <Lucide icon="MapPin" class="w-5 h-5 opacity-70" />
             </div>
-            
-            <h3 v-if="!isEditing" class="text-xl font-bold text-slate-800">
-              {{ taskDetail.title }}
-            </h3>
+            <div class="flex flex-col gap-1" v-if="!isEditing">
+              <h3 class="text-xl font-bold text-slate-800">
+                {{ taskDetail.title }}
+              </h3>
+              <div
+                v-if="isEdited"
+                class="flex items-center text-xs text-slate-400"
+              >
+                <Lucide icon="Clock" class="w-3.5 h-3.5 mr-1.5 opacity-70" />
+                <span
+                  >Last edited
+                  {{ dayjs(taskDetail.last_edited_at).fromNow() }} by
+                  <span class="font-medium text-slate-600">{{
+                    taskDetail.last_edited_by
+                  }}</span></span
+                >
+              </div>
+            </div>
+
             <FormInput
               v-else
               v-model="form.title"
@@ -221,14 +251,22 @@ const handleDelete = async () => {
         </div>
 
         <!-- Body -->
-        <div class="px-6 py-6 pb-8" :class="isEditing ? 'max-h-[60vh] overflow-y-auto' : ''">
+        <div
+          class="px-6 pt-2"
+          :class="isEditing ? 'max-h-[60vh] overflow-y-auto' : ''"
+        >
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-8">
             <!-- Due Date -->
             <div>
-              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+              >
                 Due Date
               </div>
-              <div v-if="!isEditing" class="flex items-center text-slate-700 font-medium text-sm">
+              <div
+                v-if="!isEditing"
+                class="flex items-center text-slate-700 font-medium text-sm"
+              >
                 <Lucide icon="Calendar" class="w-4 h-4 mr-2 opacity-70" />
                 {{
                   new Date(taskDetail.due_date).toLocaleDateString("en-US", {
@@ -253,7 +291,9 @@ const handleDelete = async () => {
 
             <!-- Status -->
             <div>
-              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+              >
                 Status
               </div>
               <div
@@ -282,26 +322,41 @@ const handleDelete = async () => {
                   class="w-full [&_.dropdown-input-wrap]:hidden"
                   :options="{ placeholder: 'Select status' }"
                 >
-                  <option v-for="item in taskStatuses" :key="item.value" :value="item.value">{{ item.label }}</option>
+                  <option
+                    v-for="item in taskStatuses"
+                    :key="item.value"
+                    :value="item.value"
+                  >
+                    {{ item.label }}
+                  </option>
                 </TomSelect>
               </div>
             </div>
 
             <!-- Assigned To -->
             <div>
-              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+              >
                 Assigned To
               </div>
               <div v-if="!isEditing" class="flex items-center gap-2">
                 <div class="flex -space-x-2">
-                  <template v-if="taskDetail.assignees && taskDetail.assignees.length > 0">
+                  <template
+                    v-if="
+                      taskDetail.assignees && taskDetail.assignees.length > 0
+                    "
+                  >
                     <div
                       v-for="user in taskDetail.assignees"
                       :key="user.id"
                       class="w-7 h-7 rounded-full bg-slate-200 overflow-hidden shadow-sm border-2 border-white first:ml-0"
                     >
                       <img
-                        :src="user.avatar?.url || `https://ui-avatars.com/api/?name=${user.name}`"
+                        :src="
+                          user.avatar?.url ||
+                          `https://ui-avatars.com/api/?name=${user.name}`
+                        "
                         class="w-full h-full object-cover font-bold"
                       />
                     </div>
@@ -326,9 +381,16 @@ const handleDelete = async () => {
                   v-model="assigneeIdsString"
                   class="w-full [&_.dropdown-input-wrap]:hidden"
                   multiple
-                  :options="{ placeholder: 'Select users', dropdownParent: 'body' }"
+                  :options="{
+                    placeholder: 'Select users',
+                    dropdownParent: 'body',
+                  }"
                 >
-                  <option v-for="user in projectUsers" :key="user.id" :value="user.id.toString()">
+                  <option
+                    v-for="user in projectUsers"
+                    :key="user.id"
+                    :value="user.id.toString()"
+                  >
                     {{ user.name }}
                   </option>
                 </TomSelect>
@@ -337,7 +399,9 @@ const handleDelete = async () => {
 
             <!-- Priority -->
             <div>
-              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+              >
                 Priority
               </div>
               <div
@@ -352,46 +416,78 @@ const handleDelete = async () => {
                       : 'bg-slate-100 text-slate-600'
                 "
               >
-                <span class="font-black mr-1" v-if="taskDetail.priority === 'HIGH' || taskDetail.priority === 'URGENT'">!</span>
+                <span
+                  class="font-black mr-1"
+                  v-if="
+                    taskDetail.priority === 'HIGH' ||
+                    taskDetail.priority === 'URGENT'
+                  "
+                  >!</span
+                >
                 {{ taskDetail.priority }}
               </div>
               <div v-else>
                 <TomSelect
                   v-model="form.priority"
                   class="w-full [&_.dropdown-input-wrap]:hidden"
-                  :options="{ placeholder: 'Select priority', dropdownParent: 'body' }"
+                  :options="{
+                    placeholder: 'Select priority',
+                    dropdownParent: 'body',
+                  }"
                 >
-                  <option v-for="item in taskPriorities" :key="item.value" :value="item.value">{{ item.label }}</option>
+                  <option
+                    v-for="item in taskPriorities"
+                    :key="item.value"
+                    :value="item.value"
+                  >
+                    {{ item.label }}
+                  </option>
                 </TomSelect>
               </div>
             </div>
 
             <!-- Category -->
             <div>
-              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+              >
                 Category
               </div>
               <div v-if="!isEditing">
-                  <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#f0e4db] text-[#8e6e5a]" v-if="taskDetail.task_category">
-                    <Lucide icon="Home" class="w-3 h-3 mr-1.5" />
-                    {{ taskDetail.task_category.name }}
-                  </div>
-                  <div class="text-sm text-slate-400" v-else>Uncategorized</div>
+                <div
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#f0e4db] text-[#8e6e5a]"
+                  v-if="taskDetail.task_category"
+                >
+                  <Lucide icon="Home" class="w-3 h-3 mr-1.5" />
+                  {{ taskDetail.task_category.name }}
+                </div>
+                <div class="text-sm text-slate-400" v-else>Uncategorized</div>
               </div>
               <div v-else>
                 <TomSelect
                   v-model="taskCategoryIdString"
                   class="w-full [&_.dropdown-input-wrap]:hidden"
-                  :options="{ placeholder: 'Select category', dropdownParent: 'body' }"
+                  :options="{
+                    placeholder: 'Select category',
+                    dropdownParent: 'body',
+                  }"
                 >
-                  <option v-for="cat in taskCategories" :key="cat.id" :value="cat.id.toString()">{{ cat.name }}</option>
+                  <option
+                    v-for="cat in taskCategories"
+                    :key="cat.id"
+                    :value="cat.id.toString()"
+                  >
+                    {{ cat.name }}
+                  </option>
                 </TomSelect>
               </div>
             </div>
 
             <!-- Estimated Cost -->
             <div>
-              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              <div
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+              >
                 Estimated Cost
               </div>
               <div class="text-sm font-bold text-slate-800">
@@ -410,10 +506,17 @@ const handleDelete = async () => {
 
           <!-- Notes -->
           <div class="mt-8">
-            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+            <div
+              class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2"
+            >
               Notes
             </div>
-            <div v-if="!isEditing" class="p-4 rounded-xl border border-orange-50 bg-[#fffdfb] text-slate-600 text-sm leading-relaxed min-h-[100px] whitespace-pre-wrap">{{ taskDetail.description || "No notes provided." }}</div>
+            <div
+              v-if="!isEditing"
+              class="p-4 rounded-xl border border-orange-50 bg-[#fffdfb] text-slate-600 text-sm leading-relaxed min-h-[100px] whitespace-pre-wrap"
+            >
+              {{ taskDetail.description || "No notes provided." }}
+            </div>
             <FormTextarea
               v-else
               v-model="form.description"
@@ -424,7 +527,9 @@ const handleDelete = async () => {
         </div>
 
         <!-- Footer -->
-        <div class="px-6 py-4 flex items-center justify-between border-t border-slate-100 bg-slate-50/50 rounded-b-lg">
+        <div
+          class="px-6 py-4 flex items-center justify-between border-t border-slate-100 bg-slate-50/50 rounded-b-lg"
+        >
           <button
             @click="isDeleteConfirmOpen = true"
             type="button"
@@ -433,8 +538,9 @@ const handleDelete = async () => {
           >
             <Lucide icon="Trash2" class="w-4 h-4 mr-1.5" /> Delete Task
           </button>
-          <div v-else></div> <!-- spacer when editing so buttons align right -->
-          
+          <div v-else></div>
+          <!-- spacer when editing so buttons align right -->
+
           <div class="flex items-center gap-3">
             <button
               v-if="!isEditing"
@@ -451,7 +557,11 @@ const handleDelete = async () => {
               :disabled="isSubmitting"
               class="px-6 py-2.5 rounded-lg text-sm font-medium text-white shadow-sm bg-[#c0997e] hover:bg-[#a68269] disabled:opacity-60 transition-colors flex items-center"
             >
-              <Lucide v-if="isSubmitting" icon="Loader" class="w-4 h-4 animate-spin mr-2" />
+              <Lucide
+                v-if="isSubmitting"
+                icon="Loader"
+                class="w-4 h-4 animate-spin mr-2"
+              />
               {{ isSubmitting ? "Saving..." : "Mark as Completed" }}
             </button>
 
@@ -472,7 +582,11 @@ const handleDelete = async () => {
               :disabled="isSubmitting"
               class="px-6 py-2.5 rounded-lg text-sm font-medium text-white shadow-sm bg-primary hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center"
             >
-              <Lucide v-if="isSubmitting" icon="Loader" class="w-4 h-4 animate-spin mr-2" />
+              <Lucide
+                v-if="isSubmitting"
+                icon="Loader"
+                class="w-4 h-4 animate-spin mr-2"
+              />
               {{ isSubmitting ? "Saving..." : "Save Changes" }}
             </button>
           </div>
@@ -485,15 +599,34 @@ const handleDelete = async () => {
   <Dialog :open="isDeleteConfirmOpen" @close="isDeleteConfirmOpen = false">
     <Dialog.Panel>
       <div class="px-6 py-5 text-center">
-        <Lucide icon="AlertCircle" class="w-16 h-16 text-danger mx-auto mt-3 mb-4" />
+        <Lucide
+          icon="AlertCircle"
+          class="w-16 h-16 text-danger mx-auto mt-3 mb-4"
+        />
         <h3 class="text-xl font-bold text-slate-800 mb-2">Are you sure?</h3>
-        <p class="text-slate-500 mb-6 font-medium">Do you really want to delete this task? This process cannot be undone.</p>
+        <p class="text-slate-500 mb-6 font-medium">
+          Do you really want to delete this task? This process cannot be undone.
+        </p>
         <div class="flex justify-center gap-3 pb-3">
-          <button type="button" @click="isDeleteConfirmOpen = false" class="px-5 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border-none" :disabled="isSubmitting">
+          <button
+            type="button"
+            @click="isDeleteConfirmOpen = false"
+            class="px-5 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border-none"
+            :disabled="isSubmitting"
+          >
             Cancel
           </button>
-          <button type="button" @click="handleDelete" :disabled="isSubmitting" class="px-5 py-2.5 text-sm font-medium text-white bg-danger hover:bg-danger/80 rounded-lg transition-colors border-none flex items-center shadow-sm">
-            <Lucide v-if="isSubmitting" icon="Loader" class="w-4 h-4 animate-spin mr-2" />
+          <button
+            type="button"
+            @click="handleDelete"
+            :disabled="isSubmitting"
+            class="px-5 py-2.5 text-sm font-medium text-white bg-danger hover:bg-danger/80 rounded-lg transition-colors border-none flex items-center shadow-sm"
+          >
+            <Lucide
+              v-if="isSubmitting"
+              icon="Loader"
+              class="w-4 h-4 animate-spin mr-2"
+            />
             {{ isSubmitting ? "Deleting..." : "Yes, delete task!" }}
           </button>
         </div>

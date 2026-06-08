@@ -48,6 +48,15 @@ export default function useProjectApi() {
     }
   };
 
+  const getProjectActivities = async (code: string) => {
+    try {
+      const response = await ApiService.get<
+        ResponseDataCollectionWithoutPagination<any>
+      >(`projects/${code}/activities`);
+      return response.data.payload;
+    } catch (e: any) {
+      await HandlerService.responseError(e, responseError);
+      throw new Error(e);
   const inviteCollaborator = async (code: string, request: IFormInviteCollaborator) => {
     try {
       loadingBlock();
@@ -101,6 +110,7 @@ export default function useProjectApi() {
   return {
     getListProject,
     getDetailProject,
+    getProjectActivities,
     inviteCollaborator,
     getListInvitations,
     resendInvitation,

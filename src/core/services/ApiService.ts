@@ -141,11 +141,10 @@ export default class ApiService {
           try {
             const { data } = await axios.post(
               `${import.meta.env.VITE_APP_API_URL}/token/refresh`,
-              {},
               { withCredentials: true },
             );
 
-            const newToken: string = data.access_token;
+            const newToken: string = data.payload.access_token;
 
             // Simpan token baru
             localStorage.setItem("access_token", newToken);
