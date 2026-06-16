@@ -207,7 +207,6 @@ const handleSubmit = async () => {
               class="w-full"
               :options="{
                 placeholder: 'Select task',
-                position: 'top',
                 dropdownParent: 'body',
               }"
             >

@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import Lucide from "@/components/Base/Lucide";
 import AddExpenseModal from "@/components/BudgetTracker/AddExpenseModal.vue";
 import useExpenseApi from "@/api/client/ExpenseApi";
 import useExpenseCategoryApi from "@/api/client/ExpenseCategoryApi";
-import useProjectApi from "@/api/client/ProjectApi";
 import { formatCurrency } from "@/core/helpers/utils";
 import dayjs from "dayjs";
 import { Dialog } from "@/components/Base/Headless";
 import * as XLSX from "xlsx";
-import type IProject from "@/types/entities/Project";
+import useActiveProject from "@/composable/useActiveProject";
+import PageHeader from "@/components/Base/PageHeader/PageHeader.vue";
 
 const { getListExpenseCategory } = useExpenseCategoryApi();
-// const { getDetailProject } = useProjectApi();
 
-const activeProject = ref<IProject | null>(null);
+const { activeProject } = useActiveProject();
 const weddingDate = ref("");
 const weddingDateFormatted = ref("");
 const totalProjectBudget = ref(0);
@@ -37,11 +36,9 @@ const overview = ref({
 const categories = ref<any[]>([]);
 
 const fetchExpenseData = async () => {
+  if (!activeProject.value) return;
   isLoading.value = true;
   try {
-    const savedProject = localStorage.getItem("activeProject");
-    if (!savedProject) return;
-    activeProject.value = JSON.parse(savedProject);
 
     const catRes = await getListExpenseCategory({ include: "expenses" });
 
@@ -194,15 +191,19 @@ const exportToExcel = () => {
 onMounted(() => {
   fetchExpenseData();
 });
+
+watch(activeProject, () => {
+  fetchExpenseData();
+});
 </script>
 
 <template>
-  <div class="py-5">
+  <div class="py-5 relative">
     <!-- Header Area -->
-    <div
-      class="flex flex-col sm:flex-row items-end justify-between intro-y mb-10"
+    <PageHeader
+      :breadcrumbs="[{ label: 'Home', url: '#' }, { label: 'Budget Tracker' }]"
     >
-      <div>
+      <template #before-title>
         <div
           class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-2 ml-0.5"
         >
@@ -219,13 +220,11 @@ onMounted(() => {
             Budget Estimation: {{ formatCurrency(totalProjectBudget) }}
           </div>
         </div>
-        <h2
-          class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight"
-        >
-          Expenses Overview
-        </h2>
-      </div>
-      <div class="flex items-center gap-3 mt-5 sm:mt-0">
+      </template>
+      
+      <template #title>Expenses Overview</template>
+      
+      <template #actions>
         <button
           @click="exportToExcel"
           class="px-5 py-2.5 bg-white text-slate-700 font-bold rounded-full shadow-sm border border-slate-200 hover:bg-slate-50 transition-all flex items-center dark:bg-darkmode-600 dark:text-slate-200 dark:border-darkmode-400"
@@ -238,8 +237,8 @@ onMounted(() => {
         >
           <Lucide icon="Plus" class="w-4 h-4 mr-2" /> Add Expense
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Loading State -->
     <div

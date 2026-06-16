@@ -2,8 +2,8 @@
 import "@/assets/css/vendors/tom-select.css";
 import _ from "lodash";
 import { setValue, init, updateValue } from "./tom-select";
-import type { TomSettings } from "tom-select/dist/types/types/settings";
-import type { RecursivePartial } from "tom-select/dist/types/types/core";
+import type { TomSettings } from "tom-select/dist/esm/types/settings";
+import type { RecursivePartial } from "tom-select/dist/esm/types/core";
 import TomSelectPlugin from "tom-select";
 import {
   computed,
@@ -12,6 +12,8 @@ import {
   inject,
   ref,
 } from "vue";
+import { Dialog } from "@/components/Base/Headless";
+import Lucide from "@/components/Base/Lucide";
 
 export interface TomSelectElement extends HTMLSelectElement {
   TomSelect: TomSelectPlugin;
@@ -39,6 +41,34 @@ const emit = defineEmits<TomSelectEmit>();
 
 const tomSelectRef = ref<TomSelectElement>();
 
+const confirmDeleteModal = ref(false);
+const confirmDeleteText = ref("");
+let isProgrammaticDelete = false;
+let pendingDeleteValues: string[] = [];
+
+const onConfirmDelete = () => {
+  confirmDeleteModal.value = false;
+  if (tomSelectRef.value) {
+    const el = tomSelectRef.value;
+    const clonedEl = document.querySelectorAll(
+      `[data-id='${el.getAttribute("data-id")}'][data-initial-class]`
+    )[0] as TomSelectElement;
+    
+    if (clonedEl && clonedEl.TomSelect) {
+      isProgrammaticDelete = true;
+      pendingDeleteValues.forEach(val => {
+        clonedEl.TomSelect.removeItem(val);
+      });
+      isProgrammaticDelete = false;
+    }
+  }
+};
+
+const onCancelDelete = () => {
+  confirmDeleteModal.value = false;
+  pendingDeleteValues = [];
+};
+
 // Compute all default options
 const computedOptions = computed(() => {
   let options: TomSelectProps["options"] = {
@@ -54,14 +84,19 @@ const computedOptions = computed(() => {
       persist: false,
       create: true,
       onDelete: function (values: string[]) {
+        if (isProgrammaticDelete) return true;
         if (!props.confirmOnDelete) return true;
-        return confirm(
-          values.length > 1
+        
+        confirmDeleteText.value = values.length > 1
             ? "Are you sure you want to remove these " +
                 values.length +
                 " items?"
-            : 'Are you sure you want to remove "' + values[0] + '"?',
-        );
+            : 'Are you sure you want to remove "' + values[0] + '"?';
+        
+        pendingDeleteValues = values;
+        confirmDeleteModal.value = true;
+        
+        return false;
       },
       ...options,
       plugins: {
@@ -135,4 +170,36 @@ onMounted(() => {
   >
     <slot></slot>
   </select>
+
+  <!-- Delete Confirmation Modal -->
+  <Dialog :open="confirmDeleteModal" @close="onCancelDelete">
+    <Dialog.Panel>
+      <div class="p-5 text-center">
+        <Lucide
+          icon="XCircle"
+          class="w-16 h-16 mx-auto mt-3 text-danger"
+        />
+        <div class="mt-5 text-3xl">Are you sure?</div>
+        <div class="mt-2 text-slate-500">
+          {{ confirmDeleteText }}
+        </div>
+      </div>
+      <div class="px-5 pb-8 text-center">
+        <button
+          type="button"
+          @click="onCancelDelete"
+          class="px-5 py-2.5 mr-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          @click="onConfirmDelete"
+          class="px-5 py-2.5 rounded-lg text-sm font-medium text-white bg-danger hover:bg-danger/90 transition-colors"
+        >
+          Yes, remove it!
+        </button>
+      </div>
+    </Dialog.Panel>
+  </Dialog>
 </template>
