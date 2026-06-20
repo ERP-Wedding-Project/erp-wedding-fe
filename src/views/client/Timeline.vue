@@ -8,6 +8,10 @@ import TomSelect from "@/components/Base/TomSelect";
 import useProjectApi from "@/api/client/ProjectApi";
 import useTaskApi from "@/api/client/TaskApi";
 import type ITask from "@/types/entities/Task";
+import useActiveProject from "@/composable/useActiveProject";
+import PageHeader from "@/components/Base/PageHeader/PageHeader.vue";
+
+const { activeProject, setActiveProject } = useActiveProject();
 
 // View Mode
 const viewMode = ref<"timeline" | "calendar">("timeline");
@@ -181,9 +185,8 @@ const getPhaseByDate = (weddingDate: string, dueDate: string) => {
 
 const fetchTimelineData = async () => {
   try {
-    const savedProject = localStorage.getItem("activeProject");
-    if (!savedProject) return;
-    const parsedSaved = JSON.parse(savedProject);
+    if (!activeProject.value?.code) return;
+    const currentCode = activeProject.value.code;
 
     const params: any = {};
     if (filterStatus.value) params["filter[status]"] = filterStatus.value;
@@ -193,22 +196,22 @@ const fetchTimelineData = async () => {
     // Fetch project metadata and tasks in parallel for better performance
     const [projectsRes, taskData] = await Promise.all([
       getListProject(),
-      getListTask(parsedSaved.code, params),
+      getListTask(currentCode, params),
     ]);
 
     // Update activeProject from the latest project list to get updated task_progress
-    const activeProject =
+    const freshProject =
       projectsRes?.payload?.data?.find(
-        (p: any) => p.code === parsedSaved.code,
-      ) || parsedSaved;
+        (p: any) => p.code === currentCode,
+      ) || activeProject.value;
 
     // Keep localStorage in sync so other components reflect the latest progress
-    localStorage.setItem("activeProject", JSON.stringify(activeProject));
+    setActiveProject(freshProject);
 
-    activeProjectCode.value = activeProject.code;
-    activeWeddingDate.value = activeProject.wedding_date;
-    projectUsers.value = activeProject.users || [];
-    projectProgress.value = activeProject.task_progress || {};
+    activeProjectCode.value = freshProject.code;
+    activeWeddingDate.value = freshProject.wedding_date;
+    projectUsers.value = freshProject.users || [];
+    projectProgress.value = freshProject.task_progress || {};
 
     const apiTasks: ITask[] = taskData?.payload?.data || [];
 
@@ -267,7 +270,7 @@ const fetchTimelineData = async () => {
       style: "currency",
       currency: "IDR",
       maximumFractionDigits: 0,
-    }).format(activeProject.total_budget || 0);
+    }).format(freshProject.total_budget || 0);
   } catch (error) {
     console.error("Gagal mendapatkan data timeline:", error);
   }
@@ -275,6 +278,12 @@ const fetchTimelineData = async () => {
 
 onMounted(() => {
   fetchTimelineData();
+});
+
+watch(() => activeProject.value?.code, (newCode, oldCode) => {
+  if (newCode && newCode !== oldCode) {
+    fetchTimelineData();
+  }
 });
 
 const isTaskDetailModalOpen = ref(false);
@@ -296,16 +305,12 @@ const closeTaskDetailModal = () => {
 <template>
   <div class="py-5">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row items-center justify-between intro-y">
-      <div>
-        <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100">
-          Wedding Timeline
-        </h2>
-        <div class="mt-1 text-slate-500 dark:text-slate-400">
-          Manage your tasks and stay on track for your big day.
-        </div>
-      </div>
-      <div class="flex flex-wrap items-center gap-3 mt-4 sm:mt-0">
+    <PageHeader
+      :breadcrumbs="[{ label: 'Home', url: '#' }, { label: 'Timeline' }]"
+    >
+      <template #title>Wedding Timeline</template>
+      <template #subtitle>Manage your tasks and stay on track for your big day.</template>
+      <template #actions>
         <!-- View Toggle -->
         <div
           class="inline-flex rounded-lg border border-slate-200 dark:border-darkmode-400 p-1 bg-slate-50 dark:bg-darkmode-600"
@@ -341,8 +346,8 @@ const closeTaskDetailModal = () => {
         >
           <Lucide icon="Plus" class="w-4 h-4 mr-2" /> Add Task
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Planning Progress -->
     <div

@@ -3,8 +3,8 @@ import {
   type TomSelectElement,
   type TomSelectEmit,
 } from "./TomSelect.vue";
-import type {TomSettings} from "tom-select/dist/types/types/settings";
-import type {RecursivePartial} from "tom-select/dist/types/types/core";
+import type {TomSettings} from "tom-select/dist/esm/types/settings";
+import type {RecursivePartial} from "tom-select/dist/esm/types/core";
 import TomSelect from "tom-select";
 import _ from "lodash";
 

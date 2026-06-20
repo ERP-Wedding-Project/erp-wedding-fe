@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount, watch } from "vue";
 import Lucide from "@/components/Base/Lucide";
 import AddSavingModal from "@/components/BudgetTracker/AddSavingModal.vue";
 import AllocateFundsModal from "@/components/BudgetTracker/AllocateFundsModal.vue";
@@ -8,13 +8,15 @@ import TransactionDetailModal from "@/components/BudgetTracker/TransactionDetail
 import type IProject from "@/types/entities/Project";
 import { formatCurrency } from "@/core/helpers/utils";
 import useSavingApi from "@/api/client/SavingApi";
+import useActiveProject from "@/composable/useActiveProject";
+import PageHeader from "@/components/Base/PageHeader/PageHeader.vue";
 
 const activeTab = ref("All Transactions");
 const tabs = ["All Transactions", "Deposits", "Allocations"];
 
 const transactions = ref<any[]>([]);
 
-const activeProject = ref<IProject | null>(null);
+const { activeProject } = useActiveProject();
 const isSavingModalOpen = ref(false);
 const isAllocateModalOpen = ref(false);
 const isUnallocateModalOpen = ref(false);
@@ -105,13 +107,6 @@ const computeTrends = (records: any[]) => {
   allocatedTrend.value = calcTrend(curAllocated, prevAllocated);
 };
 
-const loadActiveProject = () => {
-  const savedProject = localStorage.getItem("activeProject");
-  if (savedProject) {
-    activeProject.value = JSON.parse(savedProject);
-  }
-};
-
 const fetchSavings = async () => {
   if (!activeProject.value?.code) return;
   try {
@@ -180,16 +175,7 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
-const handleStorageChange = (event: StorageEvent) => {
-  if (event.key === "activeProject" && event.newValue) {
-    activeProject.value = JSON.parse(event.newValue);
-  }
-};
-
 const refreshData = async () => {
-  // Reload activeProject from localStorage (already updated by refreshActiveProject in API)
-  loadActiveProject();
-  // Fetch latest transactions
   await fetchSavings();
 };
 
@@ -205,36 +191,29 @@ const onUnallocateSuccess = async () => {
   await refreshData();
 };
 
+watch(activeProject, () => {
+  fetchSavings();
+});
+
 onMounted(async () => {
-  loadActiveProject();
   await fetchSavings();
   document.addEventListener("click", handleClickOutside);
-  window.addEventListener("storage", handleStorageChange);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleClickOutside);
-  window.removeEventListener("storage", handleStorageChange);
 });
 </script>
 
 <template>
-  <div class="py-5">
+  <div class="py-5 relative">
     <!-- Header Area -->
-    <div
-      class="flex flex-col sm:flex-row items-start sm:items-end justify-between intro-y mb-10 relative z-50"
+    <PageHeader
+      :breadcrumbs="[{ label: 'Home', url: '#' }, { label: 'Savings' }]"
     >
-      <div>
-        <h2
-          class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight"
-        >
-          Savings Tracker
-        </h2>
-        <div class="mt-2 text-[14px] font-bold text-slate-400 tracking-wide">
-          Manage your wedding funds and allocations.
-        </div>
-      </div>
-      <div class="flex items-center gap-3 mt-5 sm:mt-0 flex-wrap">
+      <template #title>Savings Tracker</template>
+      <template #subtitle>Manage your wedding funds and allocations.</template>
+      <template #actions>
         <!-- Main Actions Button with Dropdown -->
         <div class="relative" ref="dropdownRef" style="z-index: 100">
           <button
@@ -334,8 +313,8 @@ onBeforeUnmount(() => {
             </div>
           </Transition>
         </div>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- 3 Summary Cards -->
     <div class="grid grid-cols-12 gap-6 mt-8">

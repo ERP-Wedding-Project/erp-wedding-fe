@@ -76,12 +76,12 @@ export default function useProjectApi() {
     }
   }
 
-  const getListInvitations = async () => {
+  const getListInvitations = async (params?: any) => {
     try {
       loadingBlock();
       const response = await ApiService.get<
         ResponseDataCollectionWithPagination<any>
-      >("invitations");
+      >("invitations", { params });
 
       return response.data;
     } catch (e: any) {
@@ -109,6 +109,23 @@ export default function useProjectApi() {
     }
   };
 
+  const joinProject = async (code: string, role: string) => {
+    try {
+      loadingBlock();
+      const response = await ApiService.post<any, ResponseData>(
+        `projects/join`,
+        { code, role }
+      );
+      await HandlerService.responseSuccess(response);
+      return response.data;
+    } catch (e: any) {
+      await HandlerService.responseError(e, responseError);
+      throw e;
+    } finally {
+      loadingUnBlock();
+    }
+  };
+
   return {
     getListProject,
     getDetailProject,
@@ -116,6 +133,7 @@ export default function useProjectApi() {
     inviteCollaborator,
     getListInvitations,
     resendInvitation,
+    joinProject,
     // responseError,
   };
 }

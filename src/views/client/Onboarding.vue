@@ -2,9 +2,47 @@
 import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import useClientOnboardingApi from "@/api/client/OnboardingApi";
+import useProjectApi from "@/api/client/ProjectApi";
+import { toast } from "vue3-toastify";
 
 const router = useRouter();
 const { onboarding } = useClientOnboardingApi();
+const { joinProject } = useProjectApi();
+
+const mode = ref<"choose" | "create" | "join">("choose");
+const joinLoading = ref(false);
+const joinForm = reactive({
+  code: "",
+  role: "Bride",
+});
+
+const onCodeInput = (e: any) => {
+  joinForm.code = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+};
+
+const handleJoinProject = async () => {
+  if (joinForm.code.length !== 8) {
+    toast.error("Invitation code must be 8 characters");
+    return;
+  }
+  try {
+    joinLoading.value = true;
+    await joinProject(joinForm.code, joinForm.role);
+
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      user.complete_onboarding = true;
+      localStorage.setItem("user", JSON.stringify(user));
+    }
+
+    router.push({ name: "dashboard-client" });
+  } catch (e: any) {
+    toast.error("Failed to join project. Please check your invitation code.");
+  } finally {
+    joinLoading.value = false;
+  }
+};
 
 const step = ref(1);
 const stepTitles = [
@@ -121,7 +159,96 @@ const finishSetup = async () => {
         <span class="text-xl font-bold">WedPlan</span>
       </div>
 
-      <div class="w-full max-w-lg mx-auto flex-1 flex flex-col min-h-0">
+      <!-- Mode: Choose -->
+      <div v-if="mode === 'choose'" class="w-full max-w-lg mx-auto flex-1 flex flex-col justify-center animate-fade-in">
+        <h1 class="text-3xl lg:text-4xl font-serif mb-2 leading-tight">Welcome to WedPlan</h1>
+        <p class="text-[#6c615a] mb-10 text-sm">How would you like to start your journey?</p>
+
+        <button
+          @click="mode = 'create'"
+          class="w-full text-left p-6 mb-4 bg-white rounded-2xl shadow-sm border-2 border-transparent hover:border-[#A27A68] hover:shadow-md transition-all group"
+        >
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-[#F2E5DD] rounded-full flex items-center justify-center group-hover:bg-[#A27A68] transition-colors">
+              <svg class="w-6 h-6 text-[#A27A68] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-[#3e3a35]">Create New Project</h3>
+              <p class="text-xs text-[#6c615a] mt-1">Start planning your own wedding from scratch</p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          @click="mode = 'join'"
+          class="w-full text-left p-6 bg-white rounded-2xl shadow-sm border-2 border-transparent hover:border-[#A27A68] hover:shadow-md transition-all group"
+        >
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-[#F2E5DD] rounded-full flex items-center justify-center group-hover:bg-[#A27A68] transition-colors">
+              <svg class="w-6 h-6 text-[#A27A68] group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-[#3e3a35]">Join Existing Project</h3>
+              <p class="text-xs text-[#6c615a] mt-1">I have an invitation code from my partner or team</p>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Mode: Join -->
+      <div v-else-if="mode === 'join'" class="w-full max-w-lg mx-auto flex-1 flex flex-col justify-center animate-fade-in">
+        <button @click="mode = 'choose'" class="text-[#6c615a] hover:text-[#3e3a35] text-sm flex items-center gap-1 mb-8 self-start transition-colors">
+          <span>←</span> Back to Options
+        </button>
+
+        <h1 class="text-3xl lg:text-4xl font-serif mb-2 leading-tight">Join a Project</h1>
+        <p class="text-[#6c615a] mb-8 text-sm">Enter the 8-character invitation code you received.</p>
+
+        <div class="mb-4">
+          <label class="block text-xs font-bold uppercase mb-2">Invitation Code</label>
+          <input
+            v-model="joinForm.code"
+            @input="onCodeInput"
+            type="text"
+            placeholder="e.g. 2MFBO9NH"
+            class="w-full p-4 rounded-xl shadow-sm border-none focus:ring-2 focus:ring-[#A27A68] bg-white outline-none uppercase tracking-[0.2em] font-mono text-lg text-center"
+            maxlength="8"
+          />
+        </div>
+
+        <div class="mb-8">
+          <label class="block text-xs font-bold uppercase mb-2">Your Role</label>
+          <select
+            v-model="joinForm.role"
+            class="w-full p-4 rounded-xl shadow-sm border-none focus:ring-2 focus:ring-[#A27A68] bg-white outline-none"
+          >
+            <option value="Bride">Bride</option>
+            <option value="Groom">Groom</option>
+            <option value="Bridesmaid">Bridesmaid</option>
+            <option value="Groomsman">Groomsman</option>
+            <option value="Family">Family</option>
+            <option value="Wedding Organizer">Wedding Organizer</option>
+            <option value="Vendor">Vendor</option>
+          </select>
+        </div>
+
+        <button
+          :disabled="joinLoading || joinForm.code.length !== 8"
+          @click="handleJoinProject"
+          :class="(!joinLoading && joinForm.code.length === 8) ? 'bg-[#A27A68] hover:bg-[#8e6b5a]' : 'bg-[#D8C2BB] text-[#7a6b63] opacity-60 cursor-not-allowed'"
+          class="w-full py-4 rounded-xl text-white font-bold transition mb-4 shadow-md flex justify-center items-center gap-2"
+        >
+          Join Project
+          <span v-if="joinLoading" class="animate-spin ml-2">...</span>
+        </button>
+      </div>
+
+      <!-- Mode: Create -->
+      <div v-else-if="mode === 'create'" class="w-full max-w-lg mx-auto flex-1 flex flex-col min-h-0">
         <!-- Progress -->
         <div
           class="mb-10 text-xs font-semibold tracking-widest text-[#7a6b63] uppercase"
@@ -466,6 +593,14 @@ const finishSetup = async () => {
             class="w-full py-2 text-sm text-[#6c615a] hover:text-[#3e3a35] transition"
           >
             ← Previous Step
+          </button>
+          
+          <button
+            v-if="step === 1"
+            @click="mode = 'choose'"
+            class="w-full py-2 text-sm text-[#6c615a] hover:text-[#3e3a35] transition mt-2"
+          >
+            Cancel
           </button>
         </div>
       </div>

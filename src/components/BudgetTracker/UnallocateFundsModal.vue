@@ -179,7 +179,6 @@ const handleSubmit = async () => {
               class="w-full"
               :options="{
                 placeholder: 'Select expense',
-                position: 'top',
                 dropdownParent: 'body',
               }"
             >

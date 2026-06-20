@@ -40,11 +40,7 @@ const router = createRouter({
           name: "profile-client",
           component: () => import("../views/client/Profile.vue"),
         },
-        {
-          path: "/onboarding",
-          name: "onboarding",
-          component: () => import("../views/client/Onboarding.vue"),
-        },
+
         {
           path: "/collaborator",
           name: "collaborator-client",
@@ -53,6 +49,12 @@ const router = createRouter({
         // This is demo route, delete later
         ...demoRoute,
       ],
+    },
+    {
+      path: "/onboarding",
+      name: "onboarding",
+      meta: { requiresAuth: true },
+      component: () => import("../views/client/Onboarding.vue"),
     },
     {
       path: "/login",

@@ -4,12 +4,15 @@ import Lucide from "@/components/Base/Lucide";
 import { FormInput, FormLabel } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
 import { Dialog } from "@/components/Base/Headless";
-import { getActiveProject, formatCurrency, formattedDate } from "@/core/helpers/utils";
+import { formatCurrency, formattedDate } from "@/core/helpers/utils";
 import useProfileApi from "@/api/client/ProfileApi";
 import useProjectApi from "@/api/client/ProjectApi";
 import { useAuthStore } from "@/stores/auth";
+import useActiveProject from "@/composable/useActiveProject";
+import PageHeader from "@/components/Base/PageHeader/PageHeader.vue";
+import InviteCollaboratorModal from "@/components/Collaborator/InviteCollaboratorModal.vue";
 
-const projectData = ref<any>(getActiveProject());
+const { activeProject: projectData } = useActiveProject();
 
 const authStore = useAuthStore();
 const currentUser = ref<any>(authStore.getUser());
@@ -25,16 +28,14 @@ const passwordForm = ref({
 });
 
 const isInviteModalOpen = ref(false);
-const inviteForm = ref({
-  email: ""
-});
 
-const submitInvite = async () => {
+const submitInvite = async (data: { role: string; identifiers: string[] }) => {
   if (!projectData.value?.code) return;
   try {
-    await inviteCollaborator(projectData.value.code, { email: inviteForm.value.email });
+    for (const email of data.identifiers) {
+      await inviteCollaborator(projectData.value.code, { email });
+    }
     isInviteModalOpen.value = false;
-    inviteForm.value.email = "";
     const response = await getDetailProject(projectData.value.code);
     const freshProject = response?.payload?.data;
     if (freshProject) {
@@ -99,23 +100,16 @@ const submitUpdateProfile = async () => {
 <template>
   <div class="py-5 relative">
     <!-- Breadcrumb & Header -->
-    <div class="flex flex-col sm:flex-row sm:items-end justify-between intro-y mb-8">
-      <div>
-        <div class="text-slate-500 text-[13px] mb-2 font-bold flex items-center">
-          <a href="#" class="hover:text-primary transition-colors">Home</a>
-          <Lucide icon="ChevronRight" class="w-3.5 h-3.5 mx-1" />
-          <a href="#" class="hover:text-primary transition-colors">Settings</a>
-          <Lucide icon="ChevronRight" class="w-3.5 h-3.5 mx-1" />
-          <span class="text-slate-700 dark:text-slate-300">Profile</span>
-        </div>
-        <h2 class="text-3xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight">Profile<br/>Settings</h2>
-      </div>
-      <div class="flex items-center gap-4 mt-5 sm:mt-0">
+    <PageHeader
+      :breadcrumbs="[{ label: 'Home', url: '#' }, { label: 'Settings', url: '#' }, { label: 'Profile' }]"
+    >
+      <template #title>Profile<br/>Settings</template>
+      <template #actions>
         <button class="flex items-center font-bold text-[13px] text-slate-600 dark:text-slate-300 hover:text-primary transition-colors bg-white border border-slate-200 shadow-sm px-4 py-2.5 rounded-full">
           <Lucide icon="HelpCircle" class="w-4 h-4 mr-1.5" /> Support
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Top Profile Banner -->
     <div class="box p-6 intro-y bg-primary/10 border-primary/10 dark:bg-darkmode-600 mb-8 relative overflow-hidden group hover:shadow-lg transition-shadow duration-300">
@@ -351,25 +345,9 @@ const submitUpdateProfile = async () => {
   </Dialog>
 
   <!-- Invite Collaborator Modal -->
-  <Dialog :open="isInviteModalOpen" @close="isInviteModalOpen = false">
-    <Dialog.Panel>
-      <Dialog.Title>
-        <h2 class="mr-auto text-base font-medium">Invite Collaborator</h2>
-      </Dialog.Title>
-      <Dialog.Description class="grid grid-cols-12 gap-4 gap-y-3">
-        <div class="col-span-12 sm:col-span-12">
-          <FormLabel htmlFor="modal-invite-email">Partner Email</FormLabel>
-          <FormInput id="modal-invite-email" type="email" v-model="inviteForm.email" placeholder="partner@example.com" />
-        </div>
-      </Dialog.Description>
-      <div class="px-5 py-3 text-right border-t border-slate-200/60 dark:border-darkmode-400 mt-4">
-        <Button type="button" variant="outline-secondary" @click="isInviteModalOpen = false" class="w-24 mr-1">
-          Cancel
-        </Button>
-        <Button type="button" variant="primary" class="w-24" @click="submitInvite">
-          Send
-        </Button>
-      </div>
-    </Dialog.Panel>
-  </Dialog>
+  <InviteCollaboratorModal
+    :open="isInviteModalOpen"
+    @close="isInviteModalOpen = false"
+    @submit="submitInvite"
+  />
 </template>

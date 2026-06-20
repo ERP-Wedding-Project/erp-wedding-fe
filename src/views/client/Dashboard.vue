@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import Lucide from "@/components/Base/Lucide";
 import useProjectApi from "@/api/client/ProjectApi";
+import useActiveProject from "@/composable/useActiveProject";
+import PageHeader from "@/components/Base/PageHeader/PageHeader.vue";
 
 const upcomingDays = ref(142);
 const { getProjectActivities } = useProjectApi();
+const { activeProject } = useActiveProject();
 const totalBudget = ref("Rp 525.000.000");
 const totalPaid = ref("Rp 186.750.000");
 const totalSavings = ref("Rp 225.000.000");
@@ -105,11 +108,9 @@ const quickTasks = ref([
 
 const fetchRecentUpdates = async () => {
   try {
-    const savedProject = localStorage.getItem("activeProject");
-    if (!savedProject) return;
-    const project = JSON.parse(savedProject);
+    if (!activeProject.value?.code) return;
 
-    const response = await getProjectActivities(project.code);
+    const response = await getProjectActivities(activeProject.value.code);
     console.log("res", response);
 
     if (response?.data) {
@@ -130,19 +131,21 @@ const fetchRecentUpdates = async () => {
 onMounted(() => {
   fetchRecentUpdates();
 });
+
+watch(() => activeProject.value?.code, () => {
+  fetchRecentUpdates();
+});
 </script>
 
 <template>
-  <div class="py-5">
+  <div class="py-5 relative">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row items-center justify-between intro-y">
-      <div>
-        <h2 class="text-2xl font-bold text-primary">Dashboard Overview</h2>
-        <div class="mt-1 text-slate-500">
-          Good morning, let's plan your perfect day.
-        </div>
-      </div>
-      <div class="flex items-center gap-4 mt-4 sm:mt-0">
+    <PageHeader
+      :breadcrumbs="[{ label: 'Home', url: '#' }, { label: 'Dashboard' }]"
+    >
+      <template #title>Dashboard Overview</template>
+      <template #subtitle>Good morning, let's plan your perfect day.</template>
+      <template #actions>
         <div
           class="flex items-center px-4 py-2 bg-white rounded-full shadow-sm dark:bg-darkmode-600 border border-slate-200"
         >
@@ -150,12 +153,8 @@ onMounted(() => {
           <span class="font-bold mr-1">{{ upcomingDays }} Days</span>
           <span class="text-slate-500 text-sm">until the Big Day</span>
         </div>
-        <!-- <button class="p-2 bg-primary/20 rounded-full dark:bg-darkmode-400 hover:bg-primary/30 transition-colors relative">
-          <Lucide icon="Bell" class="w-5 h-5 text-slate-800 dark:text-slate-300" />
-          <div class="absolute top-0 right-0 w-2 h-2 rounded-full bg-danger"></div>
-        </button> -->
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Cards Row -->
     <div class="grid grid-cols-12 gap-6 mt-8">
