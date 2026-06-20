@@ -93,7 +93,7 @@ export default class ApiService {
         }
       },
       async (error) => {
-        console.log("err", error.response);
+        console.log("err", error);
 
         if (!error.response) {
           toast.error(
@@ -118,15 +118,15 @@ export default class ApiService {
             return Promise.reject(error);
           }
 
+          // Jangan refresh kalau sudah pernah dicoba
           if (originalRequest._retry) {
-            // Sudah dicoba refresh tapi masih 401 → logout
             const { setUnauthenticated } = useAuthStore();
             setUnauthenticated();
             return Promise.reject(error);
           }
 
+          // Kalau refresh sedang berjalan, queue request ini
           if (isRefreshing) {
-            // Refresh sedang berjalan → queue request ini, tunggu token baru
             return new Promise((resolve, reject) => {
               failedQueue.push({ resolve, reject });
             }).then((token) => {
@@ -138,15 +138,29 @@ export default class ApiService {
           originalRequest._retry = true;
           isRefreshing = true;
 
+          const refreshToken = localStorage.getItem("refresh_token");
+          if (!refreshToken) {
+            // Tidak ada refresh token sama sekali → langsung logout
+            isRefreshing = false;
+            const { setUnauthenticated } = useAuthStore();
+            setUnauthenticated();
+            return Promise.reject(error);
+          }
+
           try {
             const { data } = await axios.post(
               `${import.meta.env.VITE_APP_API_URL}/token/refresh`,
-              { withCredentials: true },
+              {},
+              {
+                headers: {
+                  Authorization: `Bearer ${refreshToken}`,
+                },
+              },
             );
 
             const newToken: string = data.payload.access_token;
 
-            // Simpan token baru
+            // Simpan dan update token baru
             localStorage.setItem("access_token", newToken);
             ApiService.vueInstance.axios.defaults.headers.common[
               "Authorization"
@@ -155,13 +169,13 @@ export default class ApiService {
             // Selesaikan semua request yang tertahan
             processQueue(null, newToken);
 
-            // Retry request original dengan token baru
+            // Retry original request
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return ApiService.vueInstance.axios(originalRequest);
           } catch (refreshError) {
             processQueue(refreshError, null);
             const { setUnauthenticated } = useAuthStore();
-            setUnauthenticated(); // clear localStorage + redirect /login
+            setUnauthenticated();
             return Promise.reject(refreshError);
           } finally {
             isRefreshing = false;
